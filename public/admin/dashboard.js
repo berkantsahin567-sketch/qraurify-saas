@@ -51,7 +51,7 @@ async function loadMerchants() {
     renderMerchants();
   } catch (err) {
     console.error('Failed to load merchants:', err);
-    alert('Hata: ' + err.message);
+    await showAlert('Hata: ' + err.message);
   }
 }
 
@@ -211,7 +211,7 @@ async function updateMerchantPlan(merchantId, newPlan) {
     calculateStats();
     renderMerchants();
   } catch (err) {
-    alert('Paket güncellenirken hata: ' + err.message);
+    await showAlert('Paket güncellenirken hata: ' + err.message);
     renderMerchants(); // Revert UI
   }
 }
@@ -236,14 +236,14 @@ async function updateMerchantStatus(merchantId, newStatus) {
     calculateStats();
     renderMerchants();
   } catch (err) {
-    alert('Durum güncellenirken hata: ' + err.message);
+    await showAlert('Durum güncellenirken hata: ' + err.message);
     renderMerchants();
   }
 }
 
 // ─── Admin: Delete merchant ───────────────────────────────────────────────────────
 async function deleteMerchantAdmin(merchantId, email) {
-  if (!confirm(`"${email}" hesabını silmek istediğinizden emin misiniz?\nBu işlem geri alınamaz!`)) return;
+  if (!await showConfirm(`"${email}" hesabını silmek istediğinizden emin misiniz?\nBu işlem geri alınamaz!`)) return;
   
   const token = localStorage.getItem('admin_token');
   try {
@@ -256,7 +256,7 @@ async function deleteMerchantAdmin(merchantId, email) {
     calculateStats();
     renderMerchants();
   } catch (err) {
-    alert('Hesap silinirken hata: ' + err.message);
+    await showAlert('Hesap silinirken hata: ' + err.message);
   }
 }
 
@@ -264,4 +264,77 @@ async function deleteMerchantAdmin(merchantId, email) {
 function handleLogout() {
   localStorage.removeItem('admin_token');
   window.location.href = 'login.html';
+}
+
+
+// ─── Custom Modal Dialog Helper Functions ────────────────────────────────────
+function showAlert(message, title = '') {
+  return new Promise((resolve) => {
+    const overlay = document.getElementById('custom-modal-overlay');
+    const titleEl = document.getElementById('custom-modal-title');
+    const msgEl = document.getElementById('custom-modal-message');
+    const confirmBtn = document.getElementById('custom-modal-btn-confirm');
+    const cancelBtn = document.getElementById('custom-modal-btn-cancel');
+    const iconEl = document.querySelector('.custom-modal-icon');
+
+    const lang = (typeof currentLang !== 'undefined') ? currentLang : 'tr';
+
+    iconEl.innerText = 'ℹ️';
+    titleEl.innerText = title || (lang === 'tr' ? 'Bilgi' : 'Information');
+    msgEl.innerText = message;
+    
+    cancelBtn.style.display = 'none';
+    confirmBtn.innerText = lang === 'tr' ? 'Tamam' : 'OK';
+    confirmBtn.className = 'btn btn-primary';
+
+    overlay.style.display = 'flex';
+
+    function onConfirm() {
+      overlay.style.display = 'none';
+      confirmBtn.removeEventListener('click', onConfirm);
+      resolve(true);
+    }
+    confirmBtn.addEventListener('click', onConfirm);
+  });
+}
+
+function showConfirm(message, title = '') {
+  return new Promise((resolve) => {
+    const overlay = document.getElementById('custom-modal-overlay');
+    const titleEl = document.getElementById('custom-modal-title');
+    const msgEl = document.getElementById('custom-modal-message');
+    const confirmBtn = document.getElementById('custom-modal-btn-confirm');
+    const cancelBtn = document.getElementById('custom-modal-btn-cancel');
+    const iconEl = document.querySelector('.custom-modal-icon');
+
+    const lang = (typeof currentLang !== 'undefined') ? currentLang : 'tr';
+
+    iconEl.innerText = '⚠️';
+    titleEl.innerText = title || (lang === 'tr' ? 'Onay' : 'Confirmation');
+    msgEl.innerText = message;
+    
+    cancelBtn.style.display = 'inline-block';
+    cancelBtn.innerText = lang === 'tr' ? 'İptal' : 'Cancel';
+    confirmBtn.innerText = lang === 'tr' ? 'Tamam' : 'Confirm';
+    confirmBtn.className = 'btn btn-danger';
+
+    overlay.style.display = 'flex';
+
+    function onConfirm() {
+      cleanup();
+      resolve(true);
+    }
+    function onCancel() {
+      cleanup();
+      resolve(false);
+    }
+    function cleanup() {
+      overlay.style.display = 'none';
+      confirmBtn.removeEventListener('click', onConfirm);
+      cancelBtn.removeEventListener('click', onCancel);
+    }
+
+    confirmBtn.addEventListener('click', onConfirm);
+    cancelBtn.addEventListener('click', onCancel);
+  });
 }

@@ -317,10 +317,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const urlParams = new URLSearchParams(window.location.search);
   if (urlParams.get('payment') === 'success') {
     window.history.replaceState({}, document.title, window.location.pathname);
-    alert(currentLang === 'tr' ? 'Tebrikler! Ödemeniz başarıyla gerçekleşti ve planınız yükseltildi.' : 'Congratulations! Your payment was successful and your plan has been upgraded.');
+    await showAlert(currentLang === 'tr' ? 'Tebrikler! Ödemeniz başarıyla gerçekleşti ve planınız yükseltildi.' : 'Congratulations! Your payment was successful and your plan has been upgraded.');
   } else if (urlParams.get('payment') === 'error') {
     window.history.replaceState({}, document.title, window.location.pathname);
-    alert(currentLang === 'tr' ? 'Ödeme işlemi başarısız oldu veya iptal edildi.' : 'Payment failed or was cancelled.');
+    await showAlert(currentLang === 'tr' ? 'Ödeme işlemi başarısız oldu veya iptal edildi.' : 'Payment failed or was cancelled.');
   }
 
   // Wire avatar dropdown toggle
@@ -1036,7 +1036,7 @@ async function handleFileChange(fileInputId, previewSpanId, hiddenInputId) {
       if (hiddenInput) hiddenInput.value = data.url;
       if (previewSpan) previewSpan.innerText = (currentLang === 'tr' ? 'Yüklendi ✓ ' : 'Uploaded ✓ ') + file.name;
     } catch (err) {
-      alert((currentLang === 'tr' ? 'Görsel yüklenemedi: ' : 'Failed to upload image: ') + err.message);
+      await showAlert((currentLang === 'tr' ? 'Görsel yüklenemedi: ' : 'Failed to upload image: ') + err.message);
       if (previewSpan) previewSpan.innerText = currentLang === 'tr' ? 'Hata oluştu' : 'Error occurred';
       if (hiddenInput) hiddenInput.value = '';
     }
@@ -1053,10 +1053,10 @@ function toggleTimeInputs() {
   }
 }
 
-function copyShortLink(link) {
+async function copyShortLink(link) {
   const dict = translations[currentLang];
   navigator.clipboard.writeText(link).then(() => {
-    alert(dict["alert-link-copied"]);
+    await showAlert(dict["alert-link-copied"]);
   }).catch(() => {
     // Fallback for older browsers
     const el = document.createElement('textarea');
@@ -1065,7 +1065,7 @@ function copyShortLink(link) {
     el.select();
     document.execCommand('copy');
     document.body.removeChild(el);
-    alert(dict["alert-link-copied"]);
+    await showAlert(dict["alert-link-copied"]);
   });
 }
 
@@ -1199,7 +1199,7 @@ async function handleCreateQr(event) {
     if (stylingContent) stylingContent.style.display = 'none';
     if (stylingArrow) stylingArrow.style.transform = 'rotate(0deg)';
 
-    alert(dict["alert-qr-created"]);
+    await showAlert(dict["alert-qr-created"]);
     fetchQrsList();
   } catch (err) {
     errDiv.innerText = err.message;
@@ -1216,7 +1216,7 @@ async function handleBulkCreate(event) {
   const csvData = document.getElementById('bulk-csv-data').value.trim();
 
   if (!csvData) {
-    alert(currentLang === 'tr' ? 'Lütfen CSV verisi girin.' : 'Please enter CSV data.');
+    await showAlert(currentLang === 'tr' ? 'Lütfen CSV verisi girin.' : 'Please enter CSV data.');
     return;
   }
 
@@ -1236,9 +1236,9 @@ async function handleBulkCreate(event) {
       .replace('{error}', response.errors.length);
     
     if (response.errors.length > 0) {
-      alert(msg + '\n\n' + response.errors.join('\n'));
+      await showAlert(msg + '\n\n' + response.errors.join('\n'));
     } else {
-      alert(msg);
+      await showAlert(msg);
     }
     fetchQrsList();
   } catch (err) {
@@ -1533,7 +1533,7 @@ async function handleSaveEdit(event) {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Failed to update QR Code.');
 
-    alert(dict["alert-settings-saved"]);
+    await showAlert(dict["alert-settings-saved"]);
     closeEditModal();
     fetchQrsList();
   } catch (err) {
@@ -1723,22 +1723,22 @@ function downloadQrSvg(qrId) {
 }
 
 // ─── Delete QR ────────────────────────────────────────────────────────────────
-async function deleteQr(qrId) {
+async async function deleteQr(qrId) {
   const qr = activeQrList.find(q => q.id === qrId);
   if (!qr) return;
 
   const dict = translations[currentLang];
   const confirmMsg = dict["confirm-delete-qr"].replace('{title}', qr.title);
 
-  if (!confirm(confirmMsg)) return;
+  if (!await showConfirm(confirmMsg)) return;
 
   try {
     const res = await fetch(`/api/qr/${qrId}`, { method: 'DELETE' });
     if (!res.ok) throw new Error(currentLang === 'tr' ? 'Silme işlemi başarısız oldu.' : 'Deletion failed.');
-    alert(dict["alert-qr-deleted"]);
+    await showAlert(dict["alert-qr-deleted"]);
     fetchQrsList();
   } catch (err) {
-    alert((currentLang === 'tr' ? 'QR Kod silinirken hata oluştu: ' : 'Error deleting QR Code: ') + err.message);
+    await showAlert((currentLang === 'tr' ? 'QR Kod silinirken hata oluştu: ' : 'Error deleting QR Code: ') + err.message);
   }
 }
 
@@ -1798,7 +1798,7 @@ function updateCheckoutPrice() {
 }
 
 // ─── Automated Webhook Payment Check ─────────────────────────────────────────
-async function checkPaymentStatus() {
+async async function checkPaymentStatus() {
   const submitBtn = document.getElementById('checkout-submit-btn');
   if (submitBtn) {
     submitBtn.setAttribute('disabled', 'true');
@@ -1812,11 +1812,11 @@ async function checkPaymentStatus() {
     const isTR = currentLang === 'tr';
     if (isPaidPlan()) {
       closeUpgradeModal();
-      alert(isTR 
+      await showAlert(isTR 
         ? `🎉 Tebrikler! Ödemeniz doğrulandı ve hesabınız başarıyla ${currentMerchant.plan === 'agency' ? 'Ajans' : 'Pro'} paketine yükseltildi!`
         : `🎉 Congratulations! Your payment has been verified and your account has been upgraded to ${currentMerchant.plan} plan!`);
     } else {
-      alert(isTR 
+      await showAlert(isTR 
         ? `Ödemeniz henüz doğrulanmadı. Shopier üzerinden ödeme yaptığınızdan emin olun. Ödemeyi tamamladıysanız birkaç saniye bekleyip tekrar deneyin.`
         : `Payment not verified yet. Make sure you completed payment on Shopier. If you paid, wait a few seconds and try again.`);
     }
@@ -1848,10 +1848,10 @@ async function simulateBillingStatus(status) {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || (currentLang === 'tr' ? 'Abonelik simülasyon durumu güncellenemedi.' : 'Failed to update billing simulation state.'));
 
-    alert(currentLang === 'tr' ? 'Abonelik ödeme durumu simülasyonu güncellendi!' : 'Simulated subscription status updated!');
+    await showAlert(currentLang === 'tr' ? 'Abonelik ödeme durumu simülasyonu güncellendi!' : 'Simulated subscription status updated!');
     refreshMerchantData();
   } catch (err) {
-    alert((currentLang === 'tr' ? 'Durum güncellenirken hata oluştu: ' : 'Error updating status: ') + err.message);
+    await showAlert((currentLang === 'tr' ? 'Durum güncellenirken hata oluştu: ' : 'Error updating status: ') + err.message);
   }
 }
 
@@ -1864,7 +1864,7 @@ async function exportScansToCsv() {
     
     const scans = data.allScans || data.recentScans || [];
     if (scans.length === 0) {
-      alert(currentLang === 'tr' ? 'Aktarılacak tarama verisi bulunamadı.' : 'No scan data available to export.');
+      await showAlert(currentLang === 'tr' ? 'Aktarılacak tarama verisi bulunamadı.' : 'No scan data available to export.');
       return;
     }
     
@@ -1886,7 +1886,7 @@ async function exportScansToCsv() {
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
   } catch (err) {
-    alert((currentLang === 'tr' ? 'CSV Aktarımı başarısız oldu: ' : 'CSV Export failed: ') + err.message);
+    await showAlert((currentLang === 'tr' ? 'CSV Aktarımı başarısız oldu: ' : 'CSV Export failed: ') + err.message);
   }
 }
 
@@ -1904,10 +1904,10 @@ async function handleSaveDomain(event) {
     });
 
     if (!res.ok) throw new Error(currentLang === 'tr' ? 'Alan adı kaydedilemedi.' : 'Failed to save domain.');
-    alert(currentLang === 'tr' ? 'Özel alan adı kaydedildi! DNS doğrulaması bekliyor.' : 'Custom domain saved! DNS verification pending.');
+    await showAlert(currentLang === 'tr' ? 'Özel alan adı kaydedildi! DNS doğrulaması bekliyor.' : 'Custom domain saved! DNS verification pending.');
     refreshMerchantData();
   } catch (err) {
-    alert((currentLang === 'tr' ? 'Alan adı kaydedilirken hata oluştu: ' : 'Error saving domain: ') + err.message);
+    await showAlert((currentLang === 'tr' ? 'Alan adı kaydedilirken hata oluştu: ' : 'Error saving domain: ') + err.message);
   }
 }
 
@@ -1919,10 +1919,10 @@ async function simulateVerifyDomain() {
     });
 
     if (!res.ok) throw new Error(currentLang === 'tr' ? 'Alan adı doğrulanamadı.' : 'Failed to verify domain.');
-    alert(currentLang === 'tr' ? 'DNS doğrulaması başarılı! Özel alan adınız aktif.' : 'DNS verification successful! Your custom domain is active.');
+    await showAlert(currentLang === 'tr' ? 'DNS doğrulaması başarılı! Özel alan adınız aktif.' : 'DNS verification successful! Your custom domain is active.');
     refreshMerchantData();
   } catch (err) {
-    alert((currentLang === 'tr' ? 'Alan adı doğrulanırken hata oluştu: ' : 'Error verifying domain: ') + err.message);
+    await showAlert((currentLang === 'tr' ? 'Alan adı doğrulanırken hata oluştu: ' : 'Error verifying domain: ') + err.message);
   }
 }
 
@@ -2097,3 +2097,76 @@ document.querySelectorAll('.modal-overlay').forEach(overlay => {
     if (e.target === overlay) closeModal(overlay.id);
   });
 });
+
+
+// ─── Custom Modal Dialog Helper Functions ────────────────────────────────────
+function showAlert(message, title = '') {
+  return new Promise((resolve) => {
+    const overlay = document.getElementById('custom-modal-overlay');
+    const titleEl = document.getElementById('custom-modal-title');
+    const msgEl = document.getElementById('custom-modal-message');
+    const confirmBtn = document.getElementById('custom-modal-btn-confirm');
+    const cancelBtn = document.getElementById('custom-modal-btn-cancel');
+    const iconEl = document.querySelector('.custom-modal-icon');
+
+    const lang = (typeof currentLang !== 'undefined') ? currentLang : 'tr';
+
+    iconEl.innerText = 'ℹ️';
+    titleEl.innerText = title || (lang === 'tr' ? 'Bilgi' : 'Information');
+    msgEl.innerText = message;
+    
+    cancelBtn.style.display = 'none';
+    confirmBtn.innerText = lang === 'tr' ? 'Tamam' : 'OK';
+    confirmBtn.className = 'btn btn-primary';
+
+    overlay.style.display = 'flex';
+
+    function onConfirm() {
+      overlay.style.display = 'none';
+      confirmBtn.removeEventListener('click', onConfirm);
+      resolve(true);
+    }
+    confirmBtn.addEventListener('click', onConfirm);
+  });
+}
+
+function showConfirm(message, title = '') {
+  return new Promise((resolve) => {
+    const overlay = document.getElementById('custom-modal-overlay');
+    const titleEl = document.getElementById('custom-modal-title');
+    const msgEl = document.getElementById('custom-modal-message');
+    const confirmBtn = document.getElementById('custom-modal-btn-confirm');
+    const cancelBtn = document.getElementById('custom-modal-btn-cancel');
+    const iconEl = document.querySelector('.custom-modal-icon');
+
+    const lang = (typeof currentLang !== 'undefined') ? currentLang : 'tr';
+
+    iconEl.innerText = '⚠️';
+    titleEl.innerText = title || (lang === 'tr' ? 'Onay' : 'Confirmation');
+    msgEl.innerText = message;
+    
+    cancelBtn.style.display = 'inline-block';
+    cancelBtn.innerText = lang === 'tr' ? 'İptal' : 'Cancel';
+    confirmBtn.innerText = lang === 'tr' ? 'Tamam' : 'Confirm';
+    confirmBtn.className = 'btn btn-danger';
+
+    overlay.style.display = 'flex';
+
+    function onConfirm() {
+      cleanup();
+      resolve(true);
+    }
+    function onCancel() {
+      cleanup();
+      resolve(false);
+    }
+    function cleanup() {
+      overlay.style.display = 'none';
+      confirmBtn.removeEventListener('click', onConfirm);
+      cancelBtn.removeEventListener('click', onCancel);
+    }
+
+    confirmBtn.addEventListener('click', onConfirm);
+    cancelBtn.addEventListener('click', onCancel);
+  });
+}

@@ -1,298 +1,326 @@
-const fs = require('fs');
-const path = require('path');
+const { createClient } = require('@supabase/supabase-js');
 
-let DB_PATH = path.join(__dirname, 'data.json');
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_KEY;
 
-// Vercel serverless environment compatibility
-if (process.env.VERCEL) {
-  const tmpPath = path.join('/tmp', 'data.json');
-  if (!fs.existsSync(tmpPath)) {
-    try {
-      const templatePath = path.join(__dirname, 'data.json');
-      if (fs.existsSync(templatePath)) {
-        fs.copyFileSync(templatePath, tmpPath);
-      }
-    } catch (e) {
-      console.error('Failed to copy pre-seeded database to /tmp:', e);
-    }
-  }
-  DB_PATH = tmpPath;
+if (!supabaseUrl || !supabaseKey) {
+  console.error('CRITICAL WARNING: SUPABASE_URL or SUPABASE_KEY environment variables are missing!');
 }
 
-// Initialize database with default structure
-function initDb() {
-  if (!fs.existsSync(DB_PATH)) {
-    const defaultData = {
-      merchants: {},
-      qrcodes: {},
-      scans: []
-    };
-    fs.writeFileSync(DB_PATH, JSON.stringify(defaultData, null, 2), 'utf8');
-  }
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+function mapMerchant(row) {
+  if (!row) return null;
+  return {
+    id: row.id,
+    email: row.email,
+    password: row.password,
+    displayName: row.displayname,
+    plan: row.plan,
+    subscriptionStatus: row.subscriptionstatus,
+    subscriptionExpireDate: row.subscriptionexpiredate,
+    lastPaymentDate: row.lastpaymentdate,
+    customDomain: row.customdomain,
+    customDomainStatus: row.customdomainstatus,
+    createdAt: row.createdat
+  };
 }
 
-// Read raw data from local JSON file
-function readData() {
-  initDb();
-  try {
-    const raw = fs.readFileSync(DB_PATH, 'utf8');
-    return JSON.parse(raw);
-  } catch (err) {
-    console.error('Error reading database file, resetting:', err);
-    return { merchants: {}, qrcodes: {}, scans: [] };
-  }
+function mapQr(row) {
+  if (!row) return null;
+  return {
+    id: row.id,
+    merchantId: row.merchantid,
+    title: row.title,
+    shortCode: row.shortcode,
+    targetUrl: row.targeturl,
+    scanCount: row.scancount || 0,
+    brandColor: row.brandcolor,
+    logoUrl: row.logourl,
+    timeEnabled: !!row.timeenabled,
+    timeTargetUrl: row.timetargeturl,
+    timeStartHour: row.timestarthour,
+    timeEndHour: row.timeendhour,
+    passwordEnabled: !!row.passwordenabled,
+    qrPassword: row.qrpassword,
+    expirationEnabled: !!row.expirationenabled,
+    expirationDate: row.expirationdate,
+    expirationScanLimit: row.expirationscanlimit,
+    expirationFallbackUrl: row.expirationfallbackurl,
+    googleAnalyticsId: row.googleanalyticsid,
+    facebookPixelId: row.facebookpixelid,
+    vcardEnabled: !!row.vcardenabled,
+    vcardData: typeof row.vcarddata === 'string' ? JSON.parse(row.vcarddata) : row.vcarddata,
+    osRedirectEnabled: !!row.osredirectenabled,
+    iosTargetUrl: row.iostargeturl,
+    androidTargetUrl: row.androidtargeturl,
+    createdAt: row.createdat
+  };
 }
 
-// Write data to local JSON file
-function writeData(data) {
-  try {
-    fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2), 'utf8');
-    return true;
-  } catch (err) {
-    console.error('Error writing to database file:', err);
-    return false;
-  }
-}
-
-// Normalize merchant fields to ensure required defaults
-function normalizeMerchant(merchant) {
-  if (!merchant) return null;
-  if (!merchant.subscriptionStatus) merchant.subscriptionStatus = 'active';
-  if (!merchant.displayName) merchant.displayName = '';
-  return merchant;
+function mapScan(row) {
+  if (!row) return null;
+  return {
+    id: row.id,
+    qrcodeId: row.qrcodeid,
+    timestamp: row.timestamp,
+    device: row.device,
+    referrer: row.referrer,
+    country: row.country
+  };
 }
 
 const db = {
   // Merchant CRUD
-  getAllMerchants() {
-    const data = readData();
-    return Object.values(data.merchants).map(m => normalizeMerchant(m));
-  },
-
-  getMerchant(id) {
-    const data = readData();
-    return normalizeMerchant(data.merchants[id] || null);
-  },
-
-  getMerchantByEmail(email) {
-    const data = readData();
-    const cleanEmail = email.toLowerCase().trim();
-    for (const id in data.merchants) {
-      if (data.merchants[id].email.toLowerCase().trim() === cleanEmail) {
-        return normalizeMerchant(data.merchants[id]);
-      }
-    }
-    return null;
-  },
-
-  createMerchant(email, password, displayName = '') {
-    const data = readData();
-    const cleanEmail = email.toLowerCase().trim();
-    
-    for (const id in data.merchants) {
-      if (data.merchants[id].email.toLowerCase().trim() === cleanEmail) {
-        throw new Error('An account with this email already exists.');
-      }
-    }
-
+  async createMerchant(email, password, displayName) {
     const id = 'mch_' + Math.random().toString(36).substring(2, 11);
-    const newMerchant = {
-      id,
-      email: cleanEmail,
-      password, // Simple password string for demo
-      displayName: displayName.trim() || cleanEmail.split('@')[0],
-      plan: 'free',
-      subscriptionStatus: 'active',
-      createdAt: new Date().toISOString()
-    };
-
-    data.merchants[id] = newMerchant;
-    writeData(data);
-    return newMerchant;
+    const { data, error } = await supabase
+      .from('merchants')
+      .insert([{
+        id,
+        email: email.toLowerCase().trim(),
+        password,
+        displayname: displayName ? displayName.trim() : '',
+        plan: 'free',
+        subscriptionstatus: 'active',
+        createdat: new Date().toISOString()
+      }])
+      .select()
+      .single();
+    if (error) throw error;
+    return mapMerchant(data);
   },
 
-  saveMerchant(id, updateData) {
-    const data = readData();
-    if (!data.merchants[id]) return null;
-
-    data.merchants[id] = {
-      ...data.merchants[id],
-      ...updateData,
-      id
-    };
-
-    // Ensure subscriptionStatus always exists
-    if (!data.merchants[id].subscriptionStatus) {
-      data.merchants[id].subscriptionStatus = 'active';
-    }
-
-    writeData(data);
-    return data.merchants[id];
+  async getMerchant(id) {
+    const { data, error } = await supabase
+      .from('merchants')
+      .select('*')
+      .eq('id', id)
+      .maybeSingle();
+    return mapMerchant(data);
   },
 
-  deleteMerchant(id) {
-    const data = readData();
-    if (!data.merchants[id]) return false;
+  async getMerchantByEmail(email) {
+    const { data, error } = await supabase
+      .from('merchants')
+      .select('*')
+      .eq('email', email.toLowerCase().trim())
+      .maybeSingle();
+    return mapMerchant(data);
+  },
 
-    // Clean all QRs and scans for this merchant
-    const merchantQrIds = Object.values(data.qrcodes)
-      .filter(qr => qr.merchantId === id)
-      .map(qr => qr.id);
+  async saveMerchant(id, updateData) {
+    const dbUpdate = {};
+    if (updateData.email !== undefined) dbUpdate.email = updateData.email;
+    if (updateData.password !== undefined) dbUpdate.password = updateData.password;
+    if (updateData.displayName !== undefined) dbUpdate.displayname = updateData.displayName;
+    if (updateData.plan !== undefined) dbUpdate.plan = updateData.plan;
+    if (updateData.subscriptionStatus !== undefined) dbUpdate.subscriptionstatus = updateData.subscriptionStatus;
+    if (updateData.subscriptionExpireDate !== undefined) dbUpdate.subscriptionexpiredate = updateData.subscriptionExpireDate;
+    if (updateData.lastPaymentDate !== undefined) dbUpdate.lastpaymentdate = updateData.lastPaymentDate;
+    if (updateData.customDomain !== undefined) dbUpdate.customdomain = updateData.customDomain;
+    if (updateData.customDomainStatus !== undefined) dbUpdate.customdomainstatus = updateData.customDomainStatus;
 
-    merchantQrIds.forEach(qrId => {
-      delete data.qrcodes[qrId];
-    });
+    const { data, error } = await supabase
+      .from('merchants')
+      .update(dbUpdate)
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) throw error;
+    return mapMerchant(data);
+  },
 
-    data.scans = data.scans.filter(s => !merchantQrIds.includes(s.qrcodeId));
-    delete data.merchants[id];
-    writeData(data);
+  async deleteMerchant(id) {
+    const { error } = await supabase
+      .from('merchants')
+      .delete()
+      .eq('id', id);
+    if (error) throw error;
     return true;
   },
 
+  async getAllMerchants() {
+    const { data, error } = await supabase
+      .from('merchants')
+      .select('*');
+    if (error) throw error;
+    return data.map(mapMerchant);
+  },
+
   // QR Code CRUD
-  getQrsByMerchant(merchantId) {
-    const data = readData();
-    return Object.values(data.qrcodes).filter(qr => qr.merchantId === merchantId);
+  async getQrById(id) {
+    const { data, error } = await supabase
+      .from('qrcodes')
+      .select('*')
+      .eq('id', id)
+      .maybeSingle();
+    return mapQr(data);
   },
 
-  getQrByShortCode(shortCode) {
-    const data = readData();
+  async getQrByShortCode(shortCode) {
+    const { data, error } = await supabase
+      .from('qrcodes')
+      .select('*')
+      .eq('shortcode', shortCode.toLowerCase().trim())
+      .maybeSingle();
+    return mapQr(data);
+  },
+
+  async getQrsByMerchant(merchantId) {
+    const { data, error } = await supabase
+      .from('qrcodes')
+      .select('*')
+      .eq('merchantid', merchantId)
+      .order('createdat', { ascending: false });
+    if (error) throw error;
+    return data.map(mapQr);
+  },
+
+  async createQr(merchantId, title, shortCode, targetUrl, brandColor, logoUrl, extraParams = {}) {
     const cleanCode = shortCode.toLowerCase().trim();
-    for (const id in data.qrcodes) {
-      if (data.qrcodes[id].shortCode.toLowerCase().trim() === cleanCode) {
-        return data.qrcodes[id];
-      }
+    const existing = await this.getQrByShortCode(cleanCode);
+    if (existing) {
+      throw new Error('This short code is already taken.');
     }
-    return null;
+
+    const id = 'qr_' + Math.random().toString(36).substring(2, 11);
+    const { data, error } = await supabase
+      .from('qrcodes')
+      .insert([{
+        id,
+        merchantid: merchantId,
+        title: title.trim(),
+        shortcode: cleanCode,
+        targeturl: targetUrl.trim(),
+        scancount: 0,
+        brandcolor: brandColor || '#7c3aed',
+        logourl: logoUrl || '',
+        timeenabled: !!extraParams.timeEnabled,
+        timetargeturl: extraParams.timeTargetUrl || '',
+        timestarthour: extraParams.timeStartHour !== undefined ? Number(extraParams.timeStartHour) : 17,
+        timeendhour: extraParams.timeEndHour !== undefined ? Number(extraParams.timeEndHour) : 23,
+        passwordenabled: !!extraParams.passwordEnabled,
+        qrpassword: extraParams.qrPassword || '',
+        expirationenabled: !!extraParams.expirationEnabled,
+        expirationdate: extraParams.expirationDate || null,
+        expirationscanlimit: extraParams.expirationScanLimit ? Number(extraParams.expirationScanLimit) : null,
+        expirationfallbackurl: extraParams.expirationFallbackUrl || '',
+        googleanalyticsid: extraParams.googleAnalyticsId || '',
+        facebookpixelid: extraParams.facebookPixelId || '',
+        vcardenabled: !!extraParams.vcardEnabled,
+        vcarddata: extraParams.vcardData || null,
+        osredirectenabled: !!extraParams.osRedirectEnabled,
+        iostargeturl: extraParams.iosTargetUrl || '',
+        androidtargeturl: extraParams.androidTargetUrl || '',
+        createdat: new Date().toISOString()
+      }])
+      .select()
+      .single();
+    if (error) throw error;
+    return mapQr(data);
   },
 
-  getQrById(id) {
-    const data = readData();
-    return data.qrcodes[id] || null;
-  },
+  async updateQr(id, updateData) {
+    const qr = await this.getQrById(id);
+    if (!qr) throw new Error('QR Code not found.');
 
-  createQr(merchantId, title, shortCode, targetUrl, brandColor, logoUrl, extraParams = {}) {
-    const data = readData();
-    const cleanCode = shortCode.toLowerCase().trim();
-
-    // Check code availability
-    for (const id in data.qrcodes) {
-      if (data.qrcodes[id].shortCode.toLowerCase().trim() === cleanCode) {
+    if (updateData.shortCode && updateData.shortCode.toLowerCase().trim() !== qr.shortCode.toLowerCase().trim()) {
+      const cleanCode = updateData.shortCode.toLowerCase().trim();
+      const existing = await this.getQrByShortCode(cleanCode);
+      if (existing) {
         throw new Error('This short code is already taken.');
       }
     }
 
-    const id = 'qr_' + Math.random().toString(36).substring(2, 11);
-    const newQr = {
-      id,
-      merchantId,
-      title: title.trim(),
-      shortCode: cleanCode,
-      targetUrl: targetUrl.trim(),
-      scanCount: 0,
-      brandColor: brandColor || '#7c3aed',
-      logoUrl: logoUrl || '',
-      timeEnabled: false,
-      timeTargetUrl: '',
-      timeStartHour: 17,
-      timeEndHour: 23,
-      passwordEnabled: !!extraParams.passwordEnabled,
-      qrPassword: extraParams.qrPassword || '',
-      expirationEnabled: !!extraParams.expirationEnabled,
-      expirationDate: extraParams.expirationDate || null,
-      expirationScanLimit: extraParams.expirationScanLimit ? Number(extraParams.expirationScanLimit) : null,
-      expirationFallbackUrl: extraParams.expirationFallbackUrl || '',
-      // Option A: Tracking Pixel tags
-      googleAnalyticsId: extraParams.googleAnalyticsId || '',
-      facebookPixelId: extraParams.facebookPixelId || '',
-      // Option B: vCard Landing Page
-      vcardEnabled: !!extraParams.vcardEnabled,
-      vcardData: extraParams.vcardData || null,
-      // Option D: OS-based Redirect
-      osRedirectEnabled: !!extraParams.osRedirectEnabled,
-      iosTargetUrl: extraParams.iosTargetUrl || '',
-      androidTargetUrl: extraParams.androidTargetUrl || '',
-      createdAt: new Date().toISOString()
-    };
+    const dbUpdate = {};
+    if (updateData.title !== undefined) dbUpdate.title = updateData.title;
+    if (updateData.shortCode !== undefined) dbUpdate.shortcode = updateData.shortCode.toLowerCase().trim();
+    if (updateData.targetUrl !== undefined) dbUpdate.targeturl = updateData.targetUrl;
+    if (updateData.brandColor !== undefined) dbUpdate.brandcolor = updateData.brandColor;
+    if (updateData.logoUrl !== undefined) dbUpdate.logourl = updateData.logoUrl;
+    if (updateData.timeEnabled !== undefined) dbUpdate.timeenabled = !!updateData.timeEnabled;
+    if (updateData.timeTargetUrl !== undefined) dbUpdate.timetargeturl = updateData.timeTargetUrl;
+    if (updateData.timeStartHour !== undefined) dbUpdate.timestarthour = Number(updateData.timeStartHour);
+    if (updateData.timeEndHour !== undefined) dbUpdate.timeendhour = Number(updateData.timeEndHour);
+    if (updateData.passwordEnabled !== undefined) dbUpdate.passwordenabled = !!updateData.passwordEnabled;
+    if (updateData.qrPassword !== undefined) dbUpdate.qrpassword = updateData.qrPassword;
+    if (updateData.expirationEnabled !== undefined) dbUpdate.expirationenabled = !!updateData.expirationEnabled;
+    if (updateData.expirationDate !== undefined) dbUpdate.expirationdate = updateData.expirationDate;
+    if (updateData.expirationScanLimit !== undefined) dbUpdate.expirationscanlimit = updateData.expirationScanLimit;
+    if (updateData.expirationFallbackUrl !== undefined) dbUpdate.expirationfallbackurl = updateData.expirationFallbackUrl;
+    if (updateData.googleAnalyticsId !== undefined) dbUpdate.googleanalyticsid = updateData.googleAnalyticsId;
+    if (updateData.facebookPixelId !== undefined) dbUpdate.facebookpixelid = updateData.facebookPixelId;
+    if (updateData.vcardEnabled !== undefined) dbUpdate.vcardenabled = !!updateData.vcardEnabled;
+    if (updateData.vcardData !== undefined) dbUpdate.vcarddata = updateData.vcardData;
+    if (updateData.osRedirectEnabled !== undefined) dbUpdate.osredirectenabled = !!updateData.osRedirectEnabled;
+    if (updateData.iosTargetUrl !== undefined) dbUpdate.iostargeturl = updateData.iosTargetUrl;
+    if (updateData.androidTargetUrl !== undefined) dbUpdate.androidtargeturl = updateData.androidTargetUrl;
 
-    data.qrcodes[id] = newQr;
-    writeData(data);
-    return newQr;
+    const { data, error } = await supabase
+      .from('qrcodes')
+      .update(dbUpdate)
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) throw error;
+    return mapQr(data);
   },
 
-  updateQr(id, updateData) {
-    const data = readData();
-    if (!data.qrcodes[id]) throw new Error('QR Code not found.');
-
-    const qr = data.qrcodes[id];
-    
-    // If updating shortCode, verify unique
-    if (updateData.shortCode && updateData.shortCode.toLowerCase().trim() !== qr.shortCode.toLowerCase().trim()) {
-      const cleanCode = updateData.shortCode.toLowerCase().trim();
-      for (const qId in data.qrcodes) {
-        if (qId !== id && data.qrcodes[qId].shortCode.toLowerCase().trim() === cleanCode) {
-          throw new Error('This short code is already taken.');
-        }
-      }
-    }
-
-    data.qrcodes[id] = {
-      ...qr,
-      ...updateData,
-      id,
-      merchantId: qr.merchantId // lock merchantId
-    };
-
-    writeData(data);
-    return data.qrcodes[id];
-  },
-
-  deleteQr(id) {
-    const data = readData();
-    if (!data.qrcodes[id]) return false;
-
-    delete data.qrcodes[id];
-    // Clean associated scans to save space
-    data.scans = data.scans.filter(s => s.qrcodeId !== id);
-
-    writeData(data);
+  async deleteQr(id) {
+    const { error } = await supabase
+      .from('qrcodes')
+      .delete()
+      .eq('id', id);
+    if (error) return false;
     return true;
   },
 
   // Scan Logging & Analytics
-  logScan(qrcodeId, scanDetail) {
-    const data = readData();
-    if (!data.qrcodes[qrcodeId]) return null;
+  async logScan(qrcodeId, scanDetail) {
+    const currentQr = await this.getQrById(qrcodeId);
+    if (currentQr) {
+      await supabase
+        .from('qrcodes')
+        .update({ scancount: (currentQr.scanCount || 0) + 1 })
+        .eq('id', qrcodeId);
+    }
 
-    // Increment QR Code scan counter
-    data.qrcodes[qrcodeId].scanCount += 1;
-
-    const scanEntry = {
-      id: 'scn_' + Math.random().toString(36).substring(2, 11),
-      qrcodeId,
-      timestamp: new Date().toISOString(),
-      device: scanDetail.device || 'Desktop',
-      referrer: scanDetail.referrer || 'Direct',
-      country: scanDetail.country || 'Turkey'
-    };
-
-    data.scans.push(scanEntry);
-    writeData(data);
-    return scanEntry;
+    const scanId = 'scn_' + Math.random().toString(36).substring(2, 11);
+    const { data, error } = await supabase
+      .from('scans')
+      .insert([{
+        id: scanId,
+        qrcodeid: qrcodeId,
+        timestamp: new Date().toISOString(),
+        device: scanDetail.device || 'Desktop',
+        referrer: scanDetail.referrer || 'Direct',
+        country: scanDetail.country || 'Turkey'
+      }])
+      .select()
+      .single();
+    if (error) throw error;
+    return mapScan(data);
   },
 
-  getScansForQr(qrcodeId) {
-    const data = readData();
-    return data.scans.filter(s => s.qrcodeId === qrcodeId);
+  async getScansForQr(qrcodeId) {
+    const { data, error } = await supabase
+      .from('scans')
+      .select('*')
+      .eq('qrcodeid', qrcodeId)
+      .order('timestamp', { ascending: false });
+    if (error) throw error;
+    return data.map(mapScan);
   },
 
-  getScansForMerchant(merchantId) {
-    const data = readData();
-    const qrIds = Object.values(data.qrcodes)
-      .filter(qr => qr.merchantId === merchantId)
-      .map(qr => qr.id);
-    
-    return data.scans.filter(s => qrIds.includes(s.qrcodeId));
+  async getScansForMerchant(merchantId) {
+    const { data, error } = await supabase
+      .from('scans')
+      .select('*, qrcodes!inner(merchantid)')
+      .eq('qrcodes.merchantid', merchantId)
+      .order('timestamp', { ascending: false });
+    if (error) throw error;
+    return data.map(mapScan);
   }
 };
 

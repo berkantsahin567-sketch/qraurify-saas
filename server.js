@@ -34,9 +34,9 @@ function getReferrerSource(referer = '') {
 }
 
 // Redirect Route: GET /r/:shortCode
-app.get('/r/:shortCode', (req, res) => {
+app.get('/r/:shortCode', async (req, res) => {
   const shortCode = req.params.shortCode;
-  const qr = db.getQrByShortCode(shortCode);
+  const qr = await db.getQrByShortCode(shortCode);
   
   if (!qr) {
     return res.status(404).send(`
@@ -48,7 +48,7 @@ app.get('/r/:shortCode', (req, res) => {
     `);
   }
 
-  const merchant = db.getMerchant(qr.merchantId);
+  const merchant = await db.getMerchant(qr.merchantId);
   if (!merchant) {
     return res.status(404).send('Merchant account not found.');
   }
@@ -59,7 +59,7 @@ app.get('/r/:shortCode', (req, res) => {
   }
 
   // Enforcement: Free plan limit check (Max 100 scans cumulative)
-  const scans = db.getScansForMerchant(merchant.id);
+  const scans = await db.getScansForMerchant(merchant.id);
   if (merchant.plan === 'free' && scans.length >= 100) {
     return res.redirect('/suspended.html?reason=quota');
   }
@@ -86,7 +86,7 @@ app.get('/r/:shortCode', (req, res) => {
 
     if (isExpired) {
       if (qr.expirationFallbackUrl && qr.expirationFallbackUrl.trim()) {
-        db.logScan(qr.id, { device, referrer, country });
+        await db.logScan(qr.id, { device, referrer, country });
         return res.redirect(302, qr.expirationFallbackUrl.trim());
       }
       return res.redirect(302, `/expired.html?code=${shortCode}`);
@@ -102,7 +102,7 @@ app.get('/r/:shortCode', (req, res) => {
   }
 
   // Log scan
-  db.logScan(qr.id, { device, referrer, country });
+  await db.logScan(qr.id, { device, referrer, country });
 
   // Resolve target URL
   let targetUrl = qr.targetUrl;
@@ -203,7 +203,7 @@ app.get('/r/:shortCode', (req, res) => {
 
 // ─── Authentication APIs ─────────────────────────────────────────────────────
 
-app.post('/api/auth/register', (req, res) => {
+app.post('/api/auth/register', async (req, res) => {
   const { email, password, displayName } = req.body;
   if (!email || !password) {
     return res.status(400).json({ error: 'Email and password are required.' });
@@ -213,7 +213,7 @@ app.post('/api/auth/register', (req, res) => {
   }
 
   try {
-    const merchant = db.createMerchant(email, password, displayName);
+    const merchant = await db.createMerchant(email, password, displayName);
     const { password: _, ...safeMerchant } = merchant;
     res.status(201).json(safeMerchant);
   } catch (err) {
@@ -221,13 +221,13 @@ app.post('/api/auth/register', (req, res) => {
   }
 });
 
-app.post('/api/auth/login', (req, res) => {
+app.post('/api/auth/login', async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) {
     return res.status(400).json({ error: 'Email and password are required.' });
   }
 
-  const merchant = db.getMerchantByEmail(email);
+  const merchant = await db.getMerchantByEmail(email);
   if (!merchant || merchant.password !== password) {
     return res.status(401).json({ error: 'Invalid email or password.' });
   }
@@ -239,8 +239,8 @@ app.post('/api/auth/login', (req, res) => {
 // ─── Merchant Profile APIs ────────────────────────────────────────────────────
 
 // Get merchant details
-app.get('/api/merchants/:id', (req, res) => {
-  const merchant = db.getMerchant(req.params.id);
+app.get('/api/merchants/:id', async (req, res) => {
+  const merchant = await db.getMerchant(req.params.id);
   if (!merchant) {
     return res.status(404).json({ error: 'Merchant not found.' });
   }
@@ -249,23 +249,23 @@ app.get('/api/merchants/:id', (req, res) => {
 });
 
 // Update profile (displayName only; email update requires password verification)
-app.put('/api/merchants/:id/profile', (req, res) => {
+app.put('/api/merchants/:id/profile', async (req, res) => {
   const { displayName } = req.body;
-  const merchant = db.getMerchant(req.params.id);
+  const merchant = await db.getMerchant(req.params.id);
   if (!merchant) return res.status(404).json({ error: 'Merchant not found.' });
 
   const updateData = {};
   if (displayName !== undefined) updateData.displayName = displayName.trim();
 
-  const updated = db.saveMerchant(merchant.id, updateData);
+  const updated = await db.saveMerchant(merchant.id, updateData);
   const { password: _, ...safeMerchant } = updated;
   res.json(safeMerchant);
 });
 
 // Change password
-app.post('/api/merchants/:id/change-password', (req, res) => {
+app.post('/api/merchants/:id/change-password', async (req, res) => {
   const { currentPassword, newPassword } = req.body;
-  const merchant = db.getMerchant(req.params.id);
+  const merchant = await db.getMerchant(req.params.id);
   if (!merchant) return res.status(404).json({ error: 'Merchant not found.' });
 
   if (!currentPassword || !newPassword) {
@@ -278,29 +278,29 @@ app.post('/api/merchants/:id/change-password', (req, res) => {
     return res.status(400).json({ error: 'New password must be at least 6 characters.' });
   }
 
-  const updated = db.saveMerchant(merchant.id, { password: newPassword });
+  const updated = await db.saveMerchant(merchant.id, { password: newPassword });
   const { password: _, ...safeMerchant } = updated;
   res.json(safeMerchant);
 });
 
 // Delete account
-app.delete('/api/merchants/:id', (req, res) => {
+app.delete('/api/merchants/:id', async (req, res) => {
   const { password } = req.body;
-  const merchant = db.getMerchant(req.params.id);
+  const merchant = await db.getMerchant(req.params.id);
   if (!merchant) return res.status(404).json({ error: 'Merchant not found.' });
   if (merchant.password !== password) {
     return res.status(401).json({ error: 'Password confirmation is incorrect.' });
   }
 
-  db.deleteMerchant(merchant.id);
+  await db.deleteMerchant(merchant.id);
   res.json({ success: true });
 });
 
 // Upgrade plan
-app.post('/api/merchants/:id/upgrade', (req, res) => {
+app.post('/api/merchants/:id/upgrade', async (req, res) => {
   const { plan } = req.body;
   const targetPlan = ['pro', 'agency'].includes(plan) ? plan : 'pro';
-  const merchant = db.getMerchant(req.params.id);
+  const merchant = await db.getMerchant(req.params.id);
   if (!merchant) {
     return res.status(404).json({ error: 'Merchant not found.' });
   }
@@ -309,7 +309,7 @@ app.post('/api/merchants/:id/upgrade', (req, res) => {
   const expire = new Date();
   expire.setMonth(expire.getMonth() + 1);
 
-  const updated = db.saveMerchant(merchant.id, {
+  const updated = await db.saveMerchant(merchant.id, {
     plan: targetPlan,
     subscriptionStatus: 'active',
     subscriptionExpireDate: expire.toISOString(),
@@ -319,14 +319,14 @@ app.post('/api/merchants/:id/upgrade', (req, res) => {
   res.json(safeMerchant);
 });
 
-app.get('/api/payment-links', (req, res) => {
+app.get('/api/payment-links', async (req, res) => {
   res.json({
     proLink: process.env.SHOPIER_PRO_LINK || 'https://www.shopier.com/ShowProductHTML.php?id=placeholder_pro',
     agencyLink: process.env.SHOPIER_AGENCY_LINK || 'https://www.shopier.com/ShowProductHTML.php?id=placeholder_agency'
   });
 });
 
-app.post('/api/payment/shopier-callback', (req, res) => {
+app.post('/api/payment/shopier-callback', async (req, res) => {
   const { platform_order_id, email, payment_status, total_charge, signature } = req.body;
   const apiSecret = process.env.SHOPIER_API_SECRET || 'shopier_secret_key_placeholder';
 
@@ -354,7 +354,7 @@ app.post('/api/payment/shopier-callback', (req, res) => {
   }
 
   // Find merchant
-  const merchant = db.getMerchantByEmail(email);
+  const merchant = await db.getMerchantByEmail(email);
   if (!merchant) {
     console.warn(`[Shopier Webhook] Merchant not found for email: ${email}`);
     return res.status(404).send('Merchant not found');
@@ -371,7 +371,7 @@ app.post('/api/payment/shopier-callback', (req, res) => {
   const expire = new Date();
   expire.setMonth(expire.getMonth() + 1);
 
-  db.saveMerchant(merchant.id, {
+  await db.saveMerchant(merchant.id, {
     plan: targetPlan,
     subscriptionStatus: 'active',
     subscriptionExpireDate: expire.toISOString(),
@@ -385,29 +385,29 @@ app.post('/api/payment/shopier-callback', (req, res) => {
 
 
 // Toggle subscription status (simulation)
-app.post('/api/merchants/:id/subscription-status', (req, res) => {
+app.post('/api/merchants/:id/subscription-status', async (req, res) => {
   const { status } = req.body;
   if (!['active', 'unpaid', 'suspended'].includes(status)) {
     return res.status(400).json({ error: 'Invalid status value.' });
   }
 
-  const merchant = db.getMerchant(req.params.id);
+  const merchant = await db.getMerchant(req.params.id);
   if (!merchant) {
     return res.status(404).json({ error: 'Merchant not found.' });
   }
 
-  const updated = db.saveMerchant(merchant.id, { subscriptionStatus: status });
+  const updated = await db.saveMerchant(merchant.id, { subscriptionStatus: status });
   const { password: _, ...safeMerchant } = updated;
   res.json(safeMerchant);
 });
 
 // Configure Custom Domain
-app.post('/api/merchants/:id/custom-domain', (req, res) => {
+app.post('/api/merchants/:id/custom-domain', async (req, res) => {
   const { customDomain } = req.body;
-  const merchant = db.getMerchant(req.params.id);
+  const merchant = await db.getMerchant(req.params.id);
   if (!merchant) return res.status(404).json({ error: 'Merchant not found.' });
 
-  const updated = db.saveMerchant(merchant.id, {
+  const updated = await db.saveMerchant(merchant.id, {
     customDomain: customDomain ? customDomain.trim().toLowerCase() : '',
     customDomainStatus: 'pending'
   });
@@ -416,11 +416,11 @@ app.post('/api/merchants/:id/custom-domain', (req, res) => {
 });
 
 // Verify Custom Domain DNS (simulation)
-app.post('/api/merchants/:id/verify-domain', (req, res) => {
-  const merchant = db.getMerchant(req.params.id);
+app.post('/api/merchants/:id/verify-domain', async (req, res) => {
+  const merchant = await db.getMerchant(req.params.id);
   if (!merchant) return res.status(404).json({ error: 'Merchant not found.' });
 
-  const updated = db.saveMerchant(merchant.id, {
+  const updated = await db.saveMerchant(merchant.id, {
     customDomainStatus: 'active'
   });
   const { password: _, ...safeMerchant } = updated;
@@ -428,7 +428,7 @@ app.post('/api/merchants/:id/verify-domain', (req, res) => {
 });
 
 // File Upload API (Base64) for QR center logos
-app.post('/api/upload', (req, res) => {
+app.post('/api/upload', async (req, res) => {
   const { fileName, fileData } = req.body;
   if (!fileName || !fileData) {
     return res.status(400).json({ error: 'Missing file data.' });
@@ -458,12 +458,12 @@ app.post('/api/upload', (req, res) => {
 
 
 
-app.get('/api/qr/public-vcard/:shortCode', (req, res) => {
+app.get('/api/qr/public-vcard/:shortCode', async (req, res) => {
   const shortCode = req.params.shortCode;
-  const qr = db.getQrByShortCode(shortCode);
+  const qr = await db.getQrByShortCode(shortCode);
   if (!qr) return res.status(404).json({ error: 'QR Code not found.' });
 
-  const merchant = db.getMerchant(qr.merchantId);
+  const merchant = await db.getMerchant(qr.merchantId);
   if (!merchant || merchant.subscriptionStatus === 'suspended' || merchant.subscriptionStatus === 'unpaid') {
     return res.status(403).json({ error: 'Merchant account inactive.' });
   }
@@ -480,16 +480,16 @@ app.get('/api/qr/public-vcard/:shortCode', (req, res) => {
   });
 });
 
-app.get('/api/qr', (req, res) => {
+app.get('/api/qr', async (req, res) => {
   const { merchantId } = req.query;
   if (!merchantId) {
     return res.status(400).json({ error: 'merchantId parameter is required.' });
   }
-  const qrs = db.getQrsByMerchant(merchantId);
+  const qrs = await db.getQrsByMerchant(merchantId);
   res.json(qrs);
 });
 
-app.post('/api/qr', (req, res) => {
+app.post('/api/qr', async (req, res) => {
   const { 
     merchantId, title, shortCode, targetUrl, brandColor, logoUrl,
     passwordEnabled, qrPassword,
@@ -507,13 +507,13 @@ app.post('/api/qr', (req, res) => {
     return res.status(400).json({ error: 'Short code can only contain letters, numbers, dashes, and underscores.' });
   }
 
-  const merchant = db.getMerchant(merchantId);
+  const merchant = await db.getMerchant(merchantId);
   if (!merchant) {
     return res.status(404).json({ error: 'Merchant account not found.' });
   }
 
   // Enforcement: Free tier accounts cannot create more than 1 dynamic QR code
-  const existingQrs = db.getQrsByMerchant(merchantId);
+  const existingQrs = await db.getQrsByMerchant(merchantId);
   if (merchant.plan === 'free' && existingQrs.length >= 1) {
     return res.status(403).json({ error: '🔒 Free tier accounts are limited to 1 dynamic QR. Upgrade to Pro or Agency for unlimited QRs!' });
   }
@@ -536,7 +536,7 @@ app.post('/api/qr', (req, res) => {
   }
 
   try {
-    const newQr = db.createQr(merchantId, title, shortCode, targetUrl, brandColor, logoUrl, {
+    const newQr = await db.createQr(merchantId, title, shortCode, targetUrl, brandColor, logoUrl, {
       passwordEnabled,
       qrPassword,
       expirationEnabled,
@@ -558,13 +558,13 @@ app.post('/api/qr', (req, res) => {
 });
 
 // Bulk Dynamic QR Creator Endpoint
-app.post('/api/qr/bulk', (req, res) => {
+app.post('/api/qr/bulk', async (req, res) => {
   const { merchantId, csvData } = req.body;
   if (!merchantId || !csvData) {
     return res.status(400).json({ error: 'Missing required parameters.' });
   }
 
-  const merchant = db.getMerchant(merchantId);
+  const merchant = await db.getMerchant(merchantId);
   if (!merchant) {
     return res.status(404).json({ error: 'Merchant account not found.' });
   }
@@ -574,7 +574,7 @@ app.post('/api/qr/bulk', (req, res) => {
     return res.status(403).json({ error: '🔒 Free tier accounts are limited to 1 dynamic QR code. Bulk creation is a Pro/Agency feature.' });
   }
 
-  const existingQrs = db.getQrsByMerchant(merchantId);
+  const existingQrs = await db.getQrsByMerchant(merchantId);
   const lines = csvData.split('\n').map(l => l.trim()).filter(l => l.length > 0);
 
   const results = [];
@@ -592,7 +592,7 @@ app.post('/api/qr/bulk', (req, res) => {
       continue;
     }
     try {
-      const newQr = db.createQr(merchantId, title, shortCode, targetUrl);
+      const newQr = await db.createQr(merchantId, title, shortCode, targetUrl);
       results.push(newQr);
     } catch (err) {
       errors.push(`Error creating "${title}" (${shortCode}): ${err.message}`);
@@ -602,9 +602,9 @@ app.post('/api/qr/bulk', (req, res) => {
   res.json({ success: true, created: results, errors });
 });
 
-app.put('/api/qr/:id', (req, res) => {
+app.put('/api/qr/:id', async (req, res) => {
   const qrId = req.params.id;
-  const qr = db.getQrById(qrId);
+  const qr = await db.getQrById(qrId);
   if (!qr) {
     return res.status(404).json({ error: 'QR Code not found.' });
   }
@@ -619,7 +619,7 @@ app.put('/api/qr/:id', (req, res) => {
     osRedirectEnabled, iosTargetUrl, androidTargetUrl
   } = req.body;
   
-  const merchant = db.getMerchant(qr.merchantId);
+  const merchant = await db.getMerchant(qr.merchantId);
   const isPaidPlan = merchant.plan === 'pro' || merchant.plan === 'agency';
 
   // Validate shortCode if provided
@@ -676,15 +676,15 @@ app.put('/api/qr/:id', (req, res) => {
   if (androidTargetUrl !== undefined) updateData.androidTargetUrl = androidTargetUrl;
 
   try {
-    const updated = db.updateQr(qrId, updateData);
+    const updated = await db.updateQr(qrId, updateData);
     res.json(updated);
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
 });
 
-app.delete('/api/qr/:id', (req, res) => {
-  const success = db.deleteQr(req.params.id);
+app.delete('/api/qr/:id', async (req, res) => {
+  const success = await db.deleteQr(req.params.id);
   if (!success) {
     return res.status(404).json({ error: 'QR Code not found.' });
   }
@@ -693,16 +693,16 @@ app.delete('/api/qr/:id', (req, res) => {
 
 // ─── Analytics API ────────────────────────────────────────────────────────────
 
-app.get('/api/merchants/:id/analytics', (req, res) => {
+app.get('/api/merchants/:id/analytics', async (req, res) => {
   const merchantId = req.params.id;
   const allScans = req.query.all === 'true';
-  const merchant = db.getMerchant(merchantId);
+  const merchant = await db.getMerchant(merchantId);
   if (!merchant) {
     return res.status(404).json({ error: 'Merchant not found.' });
   }
 
-  const qrs = db.getQrsByMerchant(merchantId);
-  const scans = db.getScansForMerchant(merchantId);
+  const qrs = await db.getQrsByMerchant(merchantId);
+  const scans = await db.getScansForMerchant(merchantId);
 
   // Compile counts by device
   const deviceCounts = { Mobile: 0, Desktop: 0, Tablet: 0 };
@@ -749,7 +749,7 @@ function requireAdminAuth(req, res, next) {
   next();
 }
 
-app.post('/api/admin/login', (req, res) => {
+app.post('/api/admin/login', async (req, res) => {
   const { username, password } = req.body;
   const envUser = process.env.ADMIN_USERNAME || 'admin';
   const envPass = process.env.ADMIN_PASSWORD || 'adminpassword123';
@@ -762,13 +762,13 @@ app.post('/api/admin/login', (req, res) => {
   res.status(401).json({ error: 'Kullanıcı adı veya şifre hatalı.' });
 });
 
-app.get('/api/admin/check-session', requireAdminAuth, (req, res) => {
+app.get('/api/admin/check-session', requireAdminAuth, async (req, res) => {
   res.json({ success: true });
 });
 
-app.get('/api/admin/merchants', requireAdminAuth, (req, res) => {
+app.get('/api/admin/merchants', requireAdminAuth, async (req, res) => {
   try {
-    const merchants = db.getAllMerchants();
+    const merchants = await db.getAllMerchants();
     const safeMerchants = merchants.map(m => {
       const { password, ...safe } = m;
       return safe;
@@ -779,11 +779,11 @@ app.get('/api/admin/merchants', requireAdminAuth, (req, res) => {
   }
 });
 
-app.put('/api/admin/merchants/:id', requireAdminAuth, (req, res) => {
+app.put('/api/admin/merchants/:id', requireAdminAuth, async (req, res) => {
   const { plan, subscriptionStatus } = req.body;
   const merchantId = req.params.id;
   
-  const merchant = db.getMerchant(merchantId);
+  const merchant = await db.getMerchant(merchantId);
   if (!merchant) {
     return res.status(404).json({ error: 'Merchant not found.' });
   }
@@ -805,7 +805,7 @@ app.put('/api/admin/merchants/:id', requireAdminAuth, (req, res) => {
   }
   
   try {
-    const updated = db.saveMerchant(merchantId, updateData);
+    const updated = await db.saveMerchant(merchantId, updateData);
     const { password, ...safeMerchant } = updated;
     res.json(safeMerchant);
   } catch (err) {
@@ -813,15 +813,15 @@ app.put('/api/admin/merchants/:id', requireAdminAuth, (req, res) => {
   }
 });
 
-app.delete('/api/admin/merchants/:id', requireAdminAuth, (req, res) => {
+app.delete('/api/admin/merchants/:id', requireAdminAuth, async (req, res) => {
   const merchantId = req.params.id;
-  const merchant = db.getMerchant(merchantId);
+  const merchant = await db.getMerchant(merchantId);
   if (!merchant) {
     return res.status(404).json({ error: 'Merchant not found.' });
   }
   
   try {
-    db.deleteMerchant(merchantId);
+    await db.deleteMerchant(merchantId);
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: 'Merchant silinemedi: ' + err.message });
@@ -830,7 +830,7 @@ app.delete('/api/admin/merchants/:id', requireAdminAuth, (req, res) => {
 
 // ─── Fallback routing ─────────────────────────────────────────────────────────
 
-app.get('*', (req, res, next) => {
+app.get('*', async (req, res, next) => {
   if (req.url.startsWith('/api') || req.url.startsWith('/r/') || req.url.includes('.')) {
     return next();
   }
@@ -838,17 +838,17 @@ app.get('*', (req, res, next) => {
 });
 
 // Automated Subscription Expiry Downgrader
-function checkSubscribers() {
+async function checkSubscribers() {
   try {
-    const merchants = db.getAllMerchants();
+    const merchants = await db.getAllMerchants();
     const now = new Date();
-    merchants.forEach(m => {
+    for (const m of merchants) {
       if (m.plan !== 'free') {
         if (m.subscriptionExpireDate) {
           const expire = new Date(m.subscriptionExpireDate);
           if (now > expire) {
             console.log(`[Subscription Manager] Expiry hit for ${m.email}. Downgrading ${m.plan} to free.`);
-            db.saveMerchant(m.id, {
+            await db.saveMerchant(m.id, {
               plan: 'free',
               subscriptionStatus: 'active',
               subscriptionExpireDate: null
@@ -859,12 +859,12 @@ function checkSubscribers() {
           const regDate = m.createdAt ? new Date(m.createdAt) : new Date();
           const expire = new Date(regDate);
           expire.setMonth(expire.getMonth() + 1);
-          db.saveMerchant(m.id, {
+          await db.saveMerchant(m.id, {
             subscriptionExpireDate: expire.toISOString()
           });
         }
       }
-    });
+    }
   } catch (err) {
     console.error('Error running checkSubscribers:', err);
   }
