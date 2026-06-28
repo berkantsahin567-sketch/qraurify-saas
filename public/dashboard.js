@@ -325,11 +325,6 @@ const translations = {
 
 // ─── Initialization ───────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
-  const savedLang = localStorage.getItem('qr_lang') || 'tr';
-  currentLang = savedLang;
-  updateLanguageSelectorUI(currentLang);
-  applyLanguage(currentLang);
-
   const localData = localStorage.getItem('qr_merchant');
   if (!localData) {
     window.location.href = '/index.html';
@@ -337,6 +332,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   currentMerchant = JSON.parse(localData);
+
+  const savedLang = localStorage.getItem('qr_lang') || 'tr';
+  currentLang = savedLang;
+  updateLanguageSelectorUI(currentLang);
+  applyLanguage(currentLang);
   updateTierUI();
 
   // Set Profile UI elements
@@ -442,7 +442,7 @@ function applyLanguage(lang) {
 
   // Dynamic user tier display
   const tierEl = document.getElementById('user-tier');
-  if (tierEl) {
+  if (tierEl && currentMerchant) {
     if (currentMerchant.plan === 'agency') {
       tierEl.innerText = lang === 'tr' ? 'Ajans Planı' : 'Agency Plan';
       tierEl.style.color = 'var(--accent-secondary)';
