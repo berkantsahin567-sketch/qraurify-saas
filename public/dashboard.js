@@ -146,7 +146,25 @@ const translations = {
     "edit-tracking-section-title": "Piksel Takibi (Pro Only)",
     "edit-vcard-section-title": "Dijital Kartvizit (Pro Only)",
     "edit-os-section-title": "Cihaz OS Yönlendirmesi (Agency Only)",
-    "warn-agency-lock": "🔒 OS-based smart routing requires Agency subscription."
+    "warn-agency-lock": "🔒 OS-based smart routing requires Agency subscription.",
+    
+    // Additional Translation Keys for complete coverage
+    "label-ga-id": "Google Analytics Measurement ID",
+    "label-fb-id": "Facebook Pixel ID",
+    "label-vcard-name": "Full Name",
+    "label-vcard-title": "Job Title",
+    "label-vcard-company": "Company Name",
+    "label-vcard-phone": "Phone Number",
+    "label-vcard-email": "Email Address",
+    "label-vcard-website": "Website",
+    "label-vcard-address": "Address",
+    "label-vcard-instagram": "Instagram",
+    "label-vcard-facebook": "Facebook",
+    "label-vcard-linkedin": "LinkedIn",
+    "label-vcard-twitter": "Twitter / X",
+    "label-ios-url": "iOS Target URL (App Store)",
+    "label-android-url": "Android Target URL (Google Play)",
+    "label-social-accounts": "Social Accounts (Username or Link)"
   },
   tr: {
     "side-overview": "Genel Bakış",
@@ -262,7 +280,7 @@ const translations = {
     "btn-save-domain": "Yapılandır",
     "dom-status-label": "Durum:",
     "btn-verify-domain": "DNS Doğrula",
-    "creator-style-title": "QR Code Design & Logo (İsteğe Bağlı)",
+    "creator-style-title": "QR Kod Tasarımı & Logo (İsteğe Bağlı)",
     "dropdown-profile-label": "Profilim",
     "creator-password-title": "Şifre Koruması (İsteğe Bağlı)",
     "label-password-enable": "Şifre Korumasını Aktif Et",
@@ -283,7 +301,25 @@ const translations = {
     "edit-tracking-section-title": "Piksel Takibi (Sadece Pro)",
     "edit-vcard-section-title": "Dijital Kartvizit (Sadece Pro)",
     "edit-os-section-title": "Cihaz OS Yönlendirmesi (Sadece Ajans)",
-    "warn-agency-lock": "🔒 İşletim sistemine göre akıllı yönlendirme Ajans paketi gerektirir."
+    "warn-agency-lock": "🔒 İşletim sistemine göre akıllı yönlendirme Ajans paketi gerektirir.",
+
+    // Additional Translation Keys for complete coverage
+    "label-ga-id": "Google Analytics Ölçüm Kimliği",
+    "label-fb-id": "Facebook Piksel Kimliği",
+    "label-vcard-name": "Adı Soyadı",
+    "label-vcard-title": "Unvanı / Pozisyonu",
+    "label-vcard-company": "Şirket Adı",
+    "label-vcard-phone": "Telefon Numarası",
+    "label-vcard-email": "E-posta Adresi",
+    "label-vcard-website": "Web Sitesi",
+    "label-vcard-address": "Adres",
+    "label-vcard-instagram": "Instagram",
+    "label-vcard-facebook": "Facebook",
+    "label-vcard-linkedin": "LinkedIn",
+    "label-vcard-twitter": "Twitter / X",
+    "label-ios-url": "iOS Hedef Bağlantısı (App Store)",
+    "label-android-url": "Android Hedef Bağlantısı (Google Play)",
+    "label-social-accounts": "Sosyal Medya Hesapları (Kullanıcı Adı veya Bağlantı)"
   }
 };
 
@@ -301,6 +337,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   currentMerchant = JSON.parse(localData);
+  updateTierUI();
 
   // Set Profile UI elements
   const emailEl = document.getElementById('user-email');
@@ -466,7 +503,7 @@ function applyLanguage(lang) {
 // ─── Tier UI Updates ──────────────────────────────────────────────────────────
 function updateTierUI() {
   const paid = isPaidPlan();
-  const isAgency = currentMerchant.plan === 'agency';
+  const isAgency = currentMerchant && currentMerchant.plan === 'agency';
 
   // Set creator styling elements states
   const qrColorInput = document.getElementById('qr-brand-color');
@@ -491,12 +528,22 @@ function updateTierUI() {
   const qrExpirationEnabledInput = document.getElementById('qr-expiration-enabled');
   const creatorPasswordProBadge = document.getElementById('creator-password-pro-badge');
   const creatorExpirationProBadge = document.getElementById('creator-expiration-pro-badge');
+  
+  const qrPasswordInput = document.getElementById('qr-password');
+  const qrExpirationDateInput = document.getElementById('qr-expiration-date');
+  const qrExpirationScansInput = document.getElementById('qr-expiration-scans');
+  const qrExpirationFallbackInput = document.getElementById('qr-expiration-fallback');
 
   if (paid) {
     if (qrPasswordEnabledInput) qrPasswordEnabledInput.removeAttribute('disabled');
     if (qrExpirationEnabledInput) qrExpirationEnabledInput.removeAttribute('disabled');
     if (creatorPasswordProBadge) creatorPasswordProBadge.style.display = 'none';
     if (creatorExpirationProBadge) creatorExpirationProBadge.style.display = 'none';
+    
+    if (qrPasswordInput) qrPasswordInput.removeAttribute('disabled');
+    if (qrExpirationDateInput) qrExpirationDateInput.removeAttribute('disabled');
+    if (qrExpirationScansInput) qrExpirationScansInput.removeAttribute('disabled');
+    if (qrExpirationFallbackInput) qrExpirationFallbackInput.removeAttribute('disabled');
   } else {
     if (qrPasswordEnabledInput) {
       qrPasswordEnabledInput.setAttribute('disabled', 'true');
@@ -508,7 +555,12 @@ function updateTierUI() {
     }
     if (creatorPasswordProBadge) creatorPasswordProBadge.style.display = 'block';
     if (creatorExpirationProBadge) creatorExpirationProBadge.style.display = 'block';
-    // Reset toggle fields just in case
+    
+    if (qrPasswordInput) qrPasswordInput.setAttribute('disabled', 'true');
+    if (qrExpirationDateInput) qrExpirationDateInput.setAttribute('disabled', 'true');
+    if (qrExpirationScansInput) qrExpirationScansInput.setAttribute('disabled', 'true');
+    if (qrExpirationFallbackInput) qrExpirationFallbackInput.setAttribute('disabled', 'true');
+    
     setTimeout(() => {
       toggleCreatorPasswordFields();
       toggleCreatorExpirationFields();
@@ -521,6 +573,12 @@ function updateTierUI() {
   const qrVcardEnabledInput = document.getElementById('qr-vcard-enabled');
   const creatorTrackingProBadge = document.getElementById('creator-tracking-pro-badge');
   const creatorVcardProBadge = document.getElementById('creator-vcard-pro-badge');
+  
+  const vcardFields = [
+    'vcard-name', 'vcard-title', 'vcard-company', 'vcard-phone', 'vcard-email',
+    'vcard-website', 'vcard-address', 'vcard-instagram', 'vcard-facebook',
+    'vcard-linkedin', 'vcard-twitter'
+  ];
 
   if (paid) {
     if (qrGaInput) qrGaInput.removeAttribute('disabled');
@@ -528,6 +586,11 @@ function updateTierUI() {
     if (qrVcardEnabledInput) qrVcardEnabledInput.removeAttribute('disabled');
     if (creatorTrackingProBadge) creatorTrackingProBadge.style.display = 'none';
     if (creatorVcardProBadge) creatorVcardProBadge.style.display = 'none';
+    
+    vcardFields.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.removeAttribute('disabled');
+    });
   } else {
     if (qrGaInput) {
       qrGaInput.setAttribute('disabled', 'true');
@@ -543,6 +606,12 @@ function updateTierUI() {
     }
     if (creatorTrackingProBadge) creatorTrackingProBadge.style.display = 'block';
     if (creatorVcardProBadge) creatorVcardProBadge.style.display = 'block';
+    
+    vcardFields.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.setAttribute('disabled', 'true');
+    });
+    
     setTimeout(() => {
       toggleCreatorVcardFields();
     }, 0);
@@ -551,16 +620,26 @@ function updateTierUI() {
   // Set creator OS redirection states (Agency Only)
   const qrOsEnabledInput = document.getElementById('qr-os-enabled');
   const creatorOsProBadge = document.getElementById('creator-os-pro-badge');
+  const osFields = ['qr-ios-url', 'qr-android-url'];
 
   if (isAgency) {
     if (qrOsEnabledInput) qrOsEnabledInput.removeAttribute('disabled');
     if (creatorOsProBadge) creatorOsProBadge.style.display = 'none';
+    osFields.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.removeAttribute('disabled');
+    });
   } else {
     if (qrOsEnabledInput) {
       qrOsEnabledInput.setAttribute('disabled', 'true');
       qrOsEnabledInput.checked = false;
     }
     if (creatorOsProBadge) creatorOsProBadge.style.display = 'block';
+    osFields.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.setAttribute('disabled', 'true');
+    });
+    
     setTimeout(() => {
       toggleCreatorOsFields();
     }, 0);
@@ -572,121 +651,10 @@ function updateTierUI() {
   if (upgradeFreeEl) upgradeFreeEl.style.display = paid ? 'none' : 'block';
   if (upgradeProEl) upgradeProEl.style.display = paid ? 'block' : 'none';
 
-  const billingUpgradeEl = document.getElementById('billing-upgrade-promo');
-  const billingActiveEl = document.getElementById('billing-active-promo');
+  const billingUpgradeEl = document.getElementById('billing-upgrade-box');
+  const billingActiveEl = document.getElementById('billing-active-box');
   if (billingUpgradeEl) billingUpgradeEl.style.display = paid ? 'none' : 'block';
   if (billingActiveEl) billingActiveEl.style.display = paid ? 'block' : 'none';
-
-  // Update Billing Summary values in the DOM
-  const tierNameEl = document.getElementById('billing-tier-name');
-  const scansLimitEl = document.getElementById('billing-scans-limit');
-  const qrsLimitEl = document.getElementById('billing-qrs-limit');
-  
-  if (tierNameEl && scansLimitEl && qrsLimitEl) {
-    if (isAgency) {
-      tierNameEl.innerText = currentLang === 'tr' ? 'Ajans Paketi (1000 TL/ay)' : 'Agency Plan (1000 TL/mo)';
-      scansLimitEl.innerText = currentLang === 'tr' ? 'Sınırsız' : 'Unlimited';
-      qrsLimitEl.innerText = currentLang === 'tr' ? 'Sınırsız' : 'Unlimited';
-    } else if (currentMerchant.plan === 'pro') {
-      tierNameEl.innerText = currentLang === 'tr' ? 'Pro Paket (500 TL/ay)' : 'Pro Plan (500 TL/mo)';
-      scansLimitEl.innerText = currentLang === 'tr' ? 'Sınırsız' : 'Unlimited';
-      qrsLimitEl.innerText = currentLang === 'tr' ? 'Sınırsız' : 'Unlimited';
-    } else {
-      tierNameEl.innerText = currentLang === 'tr' ? 'Ücretsiz Paket' : 'Free Plan';
-      scansLimitEl.innerText = currentLang === 'tr' ? 'Aylık 100 yönlendirme' : '100 scans / month';
-      qrsLimitEl.innerText = currentLang === 'tr' ? '1 dinamik kod' : '1 dynamic code';
-    }
-  }
-
-  // Update Sidebar Active badge
-  const sideTitleEl = document.getElementById('side-plan-title');
-  const sideDescEl = document.getElementById('side-plan-desc');
-  if (sideTitleEl && sideDescEl) {
-    if (isAgency) {
-      sideTitleEl.innerText = currentLang === 'tr' ? '⚡ Ajans Planı Aktif' : '⚡ Agency Plan Active';
-      sideDescEl.innerText = currentLang === 'tr' ? 'Sınırsız tarama ve toplu yönetim.' : 'Unlimited scans and bulk management.';
-    } else {
-      sideTitleEl.innerText = currentLang === 'tr' ? '⚡ Pro Plan Aktif' : '⚡ Pro Plan Active';
-      sideDescEl.innerText = currentLang === 'tr' ? 'Sınırsız tarama ve özelleştirilmiş QR kodlar.' : 'Unlimited scans and customized QR codes.';
-    }
-  }
-
-  // Update active promo banner text
-  if (billingActiveEl) {
-    if (isAgency) {
-      billingActiveEl.innerText = currentLang === 'tr' ? '⚡ Ajans Planınız aktif. Desteğiniz için teşekkür ederiz!' : '⚡ Agency Plan active. Thank you for your support!';
-    } else {
-      billingActiveEl.innerText = currentLang === 'tr' ? '⚡ Pro Planınız aktif. Desteğiniz için teşekkür ederiz!' : '⚡ Pro Plan active. Thank you for your support!';
-    }
-  }
-
-  // Show/hide Custom Domain card for Agency plan
-  const domainCard = document.getElementById('agency-domain-card');
-  if (domainCard) {
-    if (isAgency) {
-      domainCard.style.display = 'block';
-      const domainInput = document.getElementById('agency-custom-domain');
-      if (domainInput) domainInput.value = currentMerchant.customDomain || '';
-      
-      const statusBox = document.getElementById('domain-status-box');
-      const statusBadge = document.getElementById('domain-status-badge');
-      if (statusBox && statusBadge) {
-        if (currentMerchant.customDomain) {
-          statusBox.style.display = 'flex';
-          if (currentMerchant.customDomainStatus === 'active') {
-            statusBadge.innerText = currentLang === 'tr' ? 'DNS Aktif ✓' : 'DNS Active ✓';
-            statusBadge.style.color = 'var(--success)';
-          } else {
-            statusBadge.innerText = currentLang === 'tr' ? 'DNS Doğrulaması Bekleniyor' : 'Pending DNS Verification';
-            statusBadge.style.color = 'var(--warning)';
-          }
-        } else {
-          statusBox.style.display = 'none';
-        }
-      }
-    } else {
-      domainCard.style.display = 'none';
-    }
-  }
-
-  // Update Billing Subscription Status display
-  const statusEl = document.getElementById('billing-sub-status');
-  if (statusEl) {
-    const isUnpaid = currentMerchant.subscriptionStatus === 'unpaid';
-    statusEl.innerText = isUnpaid ? 
-      (currentLang === 'tr' ? 'Ödenmemiş / Gecikmiş' : 'Unpaid / Past Due') : 
-      (currentLang === 'tr' ? 'Aktif' : 'Active');
-    statusEl.style.color = isUnpaid ? 'var(--error)' : 'var(--success)';
-  }
-
-  const expireRow = document.getElementById('billing-expire-row');
-  const expireEl = document.getElementById('billing-expire-date');
-  if (expireRow && expireEl) {
-    if (paid && currentMerchant.subscriptionExpireDate) {
-      expireRow.style.display = 'flex';
-      const expDate = new Date(currentMerchant.subscriptionExpireDate).toLocaleDateString('tr-TR', {
-        year: 'numeric', month: 'long', day: 'numeric'
-      });
-      expireEl.innerText = expDate;
-    } else {
-      expireRow.style.display = 'none';
-    }
-  }
-
-  // Toggle Bulk Creator buttons lock (Pro AND Agency)
-  const bulkBadge = document.getElementById('bulk-pro-badge');
-  const bulkTextarea = document.getElementById('bulk-csv-data');
-  const bulkBtn = document.getElementById('btn-bulk-submit');
-  
-  if (paid) {
-    if (bulkBadge) bulkBadge.style.display = 'none';
-    if (bulkTextarea) bulkTextarea.removeAttribute('disabled');
-    if (bulkBtn) bulkBtn.removeAttribute('disabled');
-  } else {
-    if (bulkBadge) bulkBadge.style.display = 'block';
-    if (bulkTextarea) bulkTextarea.setAttribute('disabled', 'true');
-    if (bulkBtn) bulkBtn.setAttribute('disabled', 'true');
-  }
 }
 
 // ─── Sidebar Tab Routing ──────────────────────────────────────────────────────
@@ -1101,16 +1069,22 @@ async function handleCreateQr(event) {
     if (logoEl && logoEl.value.trim()) payload.logoUrl = logoEl.value.trim();
 
     // Password Protection fields
-    const pwEnabled = document.getElementById('qr-password-enabled').checked;
-    const qrPassword = document.getElementById('qr-password').value.trim();
+    const pwEnabledInput = document.getElementById('qr-password-enabled');
+    const pwEnabled = pwEnabledInput ? pwEnabledInput.checked : false;
+    const qrPasswordInput = document.getElementById('qr-password');
+    const qrPassword = qrPasswordInput ? qrPasswordInput.value.trim() : '';
     payload.passwordEnabled = pwEnabled;
     payload.qrPassword = qrPassword;
 
     // Expiration Rules fields
-    const expEnabled = document.getElementById('qr-expiration-enabled').checked;
-    const expDate = document.getElementById('qr-expiration-date').value;
-    const expScans = document.getElementById('qr-expiration-scans').value.trim();
-    const expFallback = document.getElementById('qr-expiration-fallback').value.trim();
+    const expEnabledInput = document.getElementById('qr-expiration-enabled');
+    const expEnabled = expEnabledInput ? expEnabledInput.checked : false;
+    const expDateInput = document.getElementById('qr-expiration-date');
+    const expDate = expDateInput ? expDateInput.value : '';
+    const expScansInput = document.getElementById('qr-expiration-scans');
+    const expScans = expScansInput ? expScansInput.value.trim() : '';
+    const expFallbackInput = document.getElementById('qr-expiration-fallback');
+    const expFallback = expFallbackInput ? expFallbackInput.value.trim() : '';
 
     payload.expirationEnabled = expEnabled;
     payload.expirationDate = expDate ? new Date(expDate).toISOString() : null;
@@ -1118,32 +1092,36 @@ async function handleCreateQr(event) {
     payload.expirationFallbackUrl = expFallback;
 
     // Tracking Pixels
-    payload.googleAnalyticsId = document.getElementById('qr-ga-id').value.trim();
-    payload.facebookPixelId = document.getElementById('qr-fb-id').value.trim();
+    const gaInput = document.getElementById('qr-ga-id');
+    const fbInput = document.getElementById('qr-fb-id');
+    payload.googleAnalyticsId = gaInput ? gaInput.value.trim() : '';
+    payload.facebookPixelId = fbInput ? fbInput.value.trim() : '';
 
     // vCard dynamic profiles
-    const vcardEnabled = document.getElementById('qr-vcard-enabled').checked;
+    const vcardEnabledInput = document.getElementById('qr-vcard-enabled');
+    const vcardEnabled = vcardEnabledInput ? vcardEnabledInput.checked : false;
     payload.vcardEnabled = vcardEnabled;
     payload.vcardData = {
-      name: document.getElementById('vcard-name').value.trim(),
-      title: document.getElementById('vcard-title').value.trim(),
-      company: document.getElementById('vcard-company').value.trim(),
-      phone: document.getElementById('vcard-phone').value.trim(),
-      email: document.getElementById('vcard-email').value.trim(),
-      website: document.getElementById('vcard-website').value.trim(),
-      address: document.getElementById('vcard-address').value.trim(),
-      instagram: document.getElementById('vcard-instagram').value.trim(),
-      facebook: document.getElementById('vcard-facebook').value.trim(),
-      linkedin: document.getElementById('vcard-linkedin').value.trim(),
-      twitter: document.getElementById('vcard-twitter').value.trim()
+      name: document.getElementById('vcard-name') ? document.getElementById('vcard-name').value.trim() : '',
+      title: document.getElementById('vcard-title') ? document.getElementById('vcard-title').value.trim() : '',
+      company: document.getElementById('vcard-company') ? document.getElementById('vcard-company').value.trim() : '',
+      phone: document.getElementById('vcard-phone') ? document.getElementById('vcard-phone').value.trim() : '',
+      email: document.getElementById('vcard-email') ? document.getElementById('vcard-email').value.trim() : '',
+      website: document.getElementById('vcard-website') ? document.getElementById('vcard-website').value.trim() : '',
+      address: document.getElementById('vcard-address') ? document.getElementById('vcard-address').value.trim() : '',
+      instagram: document.getElementById('vcard-instagram') ? document.getElementById('vcard-instagram').value.trim() : '',
+      facebook: document.getElementById('vcard-facebook') ? document.getElementById('vcard-facebook').value.trim() : '',
+      linkedin: document.getElementById('vcard-linkedin') ? document.getElementById('vcard-linkedin').value.trim() : '',
+      twitter: document.getElementById('vcard-twitter') ? document.getElementById('vcard-twitter').value.trim() : ''
     };
 
-    // Mobile OS redirects (Agency tier validation is handled server-side too)
+    // Mobile OS redirects
     if (currentMerchant.plan === 'agency') {
-      const osEnabled = document.getElementById('qr-os-enabled').checked;
+      const osEnabledInput = document.getElementById('qr-os-enabled');
+      const osEnabled = osEnabledInput ? osEnabledInput.checked : false;
       payload.osRedirectEnabled = osEnabled;
-      payload.iosTargetUrl = document.getElementById('qr-ios-url').value.trim();
-      payload.androidTargetUrl = document.getElementById('qr-android-url').value.trim();
+      payload.iosTargetUrl = document.getElementById('qr-ios-url') ? document.getElementById('qr-ios-url').value.trim() : '';
+      payload.androidTargetUrl = document.getElementById('qr-android-url') ? document.getElementById('qr-android-url').value.trim() : '';
     }
   }
 
