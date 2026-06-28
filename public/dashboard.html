@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Merchant Console - QRAurify</title>
+  <meta name="description" content="Manage your dynamic QR codes, track scan analytics, and update redirect targets instantly.">
+  <link rel="stylesheet" href="/app.css">
+  
+  <!-- Client-side QR Code Generation Library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+<body>
+
+  <div class="dashboard-layout">
+    
+    <!-- Sidebar Navigation -->
+    <aside class="dashboard-sidebar">
+      <div class="logo sidebar-logo">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+          <rect x="7" y="7" width="3" height="3"></rect>
+          <rect x="14" y="7" width="3" height="3"></rect>
+          <rect x="7" y="14" width="3" height="3"></rect>
+          <line x1="14" y1="14" x2="14" y2="14.01"></line>
+        </svg>
+        <span>QRAurify</span>
+      </div>
+      
+      <ul class="sidebar-nav">
+        <li class="sidebar-item active" id="nav-item-overview" onclick="switchTab('overview', this)">
+          <a>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+            <span data-i18n="side-overview">Overview</span>
+          </a>
+        </li>
+        <li class="sidebar-item" id="nav-item-codes" onclick="switchTab('codes', this)">
+          <a>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="4"></line><line x1="8" y1="2" x2="8" y2="4"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+            <span data-i18n="side-codes">My QR Codes</span>
+          </a>
+        </li>
+        <li class="sidebar-item" id="nav-item-billing" onclick="switchTab('billing', this)">
+          <a>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+            <span data-i18n="side-billing">Billing & Plan</span>
+          </a>
+        </li>
+      </ul>
+      
+      <div class="sidebar-footer">
+        <div id="upgrade-box-free" class="glass-panel" style="padding: 1rem; border-color: rgba(139, 92, 246, 0.3); background: rgba(139, 92, 246, 0.05); text-align: center; display: none;">
+          <h4 style="font-size: 0.95rem; margin-bottom: 0.25rem;" data-i18n="side-up-title">Upgrade to Pro</h4>
+          <p style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.75rem;" data-i18n="side-up-desc">Unlock unlimited scans & customizable QR colors.</p>
+          <button onclick="openUpgradeModal()" class="btn btn-primary" style="padding: 0.5rem 1rem; font-size: 0.8rem; width: 100%;" data-i18n="side-up-btn">Subscribe - $12/mo</button>
+        </div>
+        <div id="upgrade-box-pro" class="glass-panel" style="padding: 1rem; border-color: rgba(16, 185, 129, 0.3); background: rgba(16, 185, 129, 0.05); text-align: center; display: none;">
+          <h4 id="side-plan-title" style="font-size: 0.95rem; color: var(--success); margin-bottom: 0.25rem;" data-i18n="side-pro-title">⚡ Pro Plan Active</h4>
+          <p id="side-plan-desc" style="font-size: 0.75rem; color: var(--text-secondary);" data-i18n="side-pro-desc">Unlimited scans and customized QR codes.</p>
+        </div>
+
+        <!-- User Info with Avatar Dropdown -->
+        <div class="user-info" style="position: relative;" id="avatar-menu-btn">
+          <div class="user-avatar" id="user-avatar" style="cursor: pointer;">M</div>
+          <div class="user-details">
+            <span id="user-display-name" style="font-weight: 600; font-size: 0.85rem;"></span>
+            <span id="user-email" style="font-size: 0.75rem; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 140px;">user@company.com</span>
+            <span id="user-tier" style="color: var(--text-secondary); font-weight: 600; font-size: 0.75rem;" data-i18n="free-plan">Free Plan</span>
+          </div>
+          <!-- Avatar dropdown menu -->
+          <div id="avatar-dropdown" class="avatar-dropdown">
+            <a href="/profile.html" class="avatar-dropdown-item">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+              <span id="dropdown-profile-label" data-i18n="dropdown-profile-label">My Profile</span>
+            </a>
+            <hr style="border: none; border-top: 1px solid var(--border-color); margin: 0.25rem 0;">
+            <button onclick="handleLogout()" class="avatar-dropdown-item" style="border: none; background: none; color: var(--error); cursor: pointer; width: 100%; text-align: left;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+              <span id="dropdown-logout-label" data-i18n="btn-logout">Log Out</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </aside>
+    
+    <!-- Main Content Area -->
+    <main class="dashboard-main">
+      <div class="dashboard-header">
+        <div>
+          <h1 id="tab-title" style="font-size: 2.2rem; margin-bottom: 0.25rem;">Overview</h1>
+          <p id="tab-desc" style="color: var(--text-secondary);">Track scans and manage redirects instantly.</p>
+        </div>
+        
+        <div style="display: flex; align-items: center; gap: 1rem;">
+          <div class="lang-switcher">
+            <button onclick="setLanguage('tr')" id="lang-btn-tr" class="lang-btn">TR</button>
+            <span style="color: var(--border-color); font-size: 0.85rem;">|</span>
+            <button onclick="setLanguage('en')" id="lang-btn-en" class="lang-btn">EN</button>
+          </div>
+          <!-- Usage Quota Alert -->
+          <div id="free-quota-banner" class="alert alert-info" style="margin-bottom: 0; padding: 0.5rem 1rem; font-weight: 600; display: none;">
+            <span id="quota-text">Scans Count: 0 / 100 limit</span>
+          </div>
+        </div>
+      </div>
+      
+      <!-- TAB: Overview -->
+      <div id="tab-overview" class="tab-content active">
+        <!-- KPI Cards -->
+        <div class="stats-grid">
+          <div class="glass-panel stat-card">
+            <div class="stat-header">
+              <span data-i18n="kpi-qrs">Dynamic QR Codes</span>
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><rect x="7" y="7" width="3" height="3"></rect><rect x="14" y="7" width="3" height="3"></rect><rect x="7" y="14" width="3" height="3"></rect></svg>
+            </div>
+            <div class="stat-value" id="stat-qrs">0</div>
+            <div class="stat-desc" data-i18n="kpi-qrs-desc">Active dynamic links created</div>
+          </div>
+          <div class="glass-panel stat-card">
+            <div class="stat-header">
+              <span data-i18n="kpi-scans">Total Redirect Scans</span>
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+            </div>
+            <div class="stat-value" id="stat-scans" style="color: var(--accent-primary);">0</div>
+            <div class="stat-desc" data-i18n="kpi-scans-desc">Redirect scans across all QRs</div>
+          </div>
+          <div class="glass-panel stat-card">
+            <div class="stat-header">
+              <span data-i18n="kpi-savings">Savings vs Reprinting</span>
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+            </div>
+            <div class="stat-value" id="stat-savings" style="color: var(--success);">$0.00</div>
+            <div class="stat-desc" data-i18n="kpi-savings-desc">Calculated at $25.00 average reprint cost</div>
+          </div>
+        </div>
+        
+        <!-- Charts split panel -->
+        <div style="display: flex; gap: 2rem; margin-bottom: 3rem; flex-wrap: wrap;">
+          <div class="glass-panel chart-box" style="padding: 2rem;">
+            <h3 style="font-size: 1.15rem; margin-bottom: 1.5rem;" data-i18n="chart-device">Device Breakdown</h3>
+            <div id="chart-devices"></div>
+          </div>
+          <div class="glass-panel chart-box" style="padding: 2rem;">
+            <h3 style="font-size: 1.15rem; margin-bottom: 1.5rem;" data-i18n="chart-source">Referrer Sources</h3>
+            <div id="chart-referrers"></div>
+          </div>
+        </div>
+        
+        <!-- Recent scans table -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+          <h3 style="font-size: 1.25rem; margin-bottom: 0;" data-i18n="tbl-title">Recent Scan Activity</h3>
+          <button onclick="exportScansToCsv()" class="btn btn-secondary" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;" data-i18n="btn-export-csv">Export CSV</button>
+        </div>
+        <div class="glass-panel table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th data-i18n="th-time">Time</th>
+                <th data-i18n="th-qr">QR Code</th>
+                <th data-i18n="th-dev">Device</th>
+                <th data-i18n="th-ref">Referrer</th>
+                <th data-i18n="th-loc">Location (Mock)</th>
+              </tr>
+            </thead>
+            <tbody id="recent-scans-rows">
+              <tr>
+                <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 2rem;" data-i18n="tbl-empty">No scans recorded yet.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      
+      <!-- TAB: Dynamic QRs -->
+      <div id="tab-codes" class="tab-content">
+        <!-- Add QR Block -->
+        <div class="glass-panel" style="padding: 2rem; margin-bottom: 3rem; max-width: 750px;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem;">
+            <div>
+              <h3 style="font-size: 1.30rem; margin-bottom: 0.25rem;" id="creator-header" data-i18n="c-title">Create a Dynamic QR Code</h3>
+              <p style="color: var(--text-secondary); font-size: 0.85rem;" id="creator-desc" data-i18n="c-desc">The short code link remains permanent, while you can swap target URLs instantly.</p>
+            </div>
+            <!-- Creator Mode Toggle -->
+            <button class="btn btn-secondary" onclick="toggleCreatorMode()" id="btn-toggle-creator" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;" data-i18n="btn-bulk-mode">Switch to Bulk Create</button>
+          </div>
+          
+          <div id="create-error" style="color: var(--error); font-size: 0.9rem; margin-bottom: 1rem; display: none;"></div>
+
+          <!-- Form 1: Standard Creator -->
+          <form id="create-qr-form" onsubmit="handleCreateQr(event)" style="display: flex; flex-direction: column; gap: 1rem;">
+             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; width: 100%;">
+              <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" data-i18n="label-title">QR Title (Reference)</label>
+                <input type="text" id="qr-title" class="form-input" placeholder="e.g. Table 1 Menu" required>
+              </div>
+              <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" data-i18n="label-slug">Short Code Slug</label>
+                <input type="text" id="qr-code" class="form-input" placeholder="e.g. table1menu" pattern="[a-zA-Z0-9_-]+" title="Only letters, numbers, dashes, underscores" required>
+              </div>
+              <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" data-i18n="label-target">Destination URL</label>
+                <input type="url" id="qr-target" class="form-input" placeholder="https://example.com" required>
+              </div>
+            </div>
+
+            <!-- Accordion / Toggle for QR Design -->
+            <div id="creator-styling-section" style="border-top: 1px solid var(--border-color); padding-top: 1rem; margin-top: 0.5rem; width: 100%;">
+              <div onclick="toggleCreatorStylingAccordion()" style="display: flex; align-items: center; justify-content: space-between; cursor: pointer; color: var(--text-secondary); font-size: 0.9rem; font-weight: 600; user-select: none; margin-bottom: 0.5rem;">
+                <span style="display: flex; align-items: center; gap: 0.5rem;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z"/><path d="M12 8V16"/><path d="M8 12H16"/></svg>
+                  <span data-i18n="creator-style-title">QR Code Design & Logo (Optional)</span>
+                </span>
+                <span id="creator-style-arrow" style="font-size: 0.8rem; transform: rotate(0deg); transition: transform 0.2s;">▼</span>
+              </div>
+              
+              <div id="creator-style-content" style="display: none; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; background: rgba(255,255,255,0.01); padding: 1rem; border-radius: 8px; border: 1px dashed var(--border-color); margin-top: 0.5rem; width: 100%; box-sizing: border-box;">
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label class="form-label" data-i18n="e-label-color">Foreground Color</label>
+                  <div class="color-picker-wrapper">
+                    <input type="color" id="qr-brand-color" class="color-preview" value="#000000" onchange="updateColorText('qr-brand-color','qr-brand-color-text')">
+                    <span id="qr-brand-color-text" style="font-family: monospace; font-size: 0.9rem;">#000000</span>
+                  </div>
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label class="form-label" data-i18n="e-label-logo">Center Logo Image</label>
+                  <div style="display: flex; gap: 0.5rem; align-items: center;">
+                    <input type="file" id="qr-logo-file" accept="image/png, image/jpeg, image/jpg" style="display: none;" onchange="handleFileChange('qr-logo-file', 'qr-logo-preview', 'qr-logo-url')">
+                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('qr-logo-file').click()" id="btn-upload-qr-logo" style="padding: 0.5rem 1rem; font-size: 0.85rem; display: flex; align-items: center; gap: 0.25rem;">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                      <span data-i18n="btn-upload-file">Choose File</span>
+                    </button>
+                    <span id="qr-logo-preview" style="font-size: 0.75rem; color: var(--text-secondary); max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">No file selected</span>
+                    <input type="hidden" id="qr-logo-url">
+                  </div>
+                </div>
+                <div id="creator-pro-badge" class="alert alert-warning" style="display: none; grid-column: 1 / -1; padding: 0.5rem 0.75rem; font-size: 0.8rem; margin-bottom: 0;">
+                  <span data-i18n="e-pro-lock">🔒 Colors and Logo overlays require Pro plan.</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Accordion / Toggle for Password Protection -->
+            <div id="creator-password-section" style="border-top: 1px solid var(--border-color); padding-top: 1rem; margin-top: 0.5rem; width: 100%;">
+              <div onclick="toggleCreatorPasswordAccordion()" style="display: flex; align-items: center; justify-content: space-between; cursor: pointer; color: var(--text-secondary); font-size: 0.9rem; font-weight: 600; user-select: none; margin-bottom: 0.5rem;">
+                <span style="display: flex; align-items: center; gap: 0.5rem;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                  <span data-i18n="creator-password-title">Password Protection (Optional)</span>
+                </span>
+                <span id="creator-password-arrow" style="font-size: 0.8rem; transform: rotate(0deg); transition: transform 0.2s;">▼</span>
+              </div>
+              
+              <div id="creator-password-content" style="display: none; flex-direction: column; gap: 1rem; background: rgba(255,255,255,0.01); padding: 1rem; border-radius: 8px; border: 1px dashed var(--border-color); margin-top: 0.5rem; width: 100%; box-sizing: border-box;">
+                <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0;">
+                  <input type="checkbox" id="qr-password-enabled" style="width: 18px; height: 18px; accent-color: var(--accent-primary);" onchange="toggleCreatorPasswordFields()">
+                  <label class="form-label" style="margin-bottom: 0; cursor: pointer;" for="qr-password-enabled" data-i18n="label-password-enable">Enable Password Protection</label>
+                </div>
+                <div id="creator-password-fields" style="display: none; flex-direction: column; gap: 0.75rem;">
+                  <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label" data-i18n="label-qr-password">Access Password</label>
+                    <input type="password" id="qr-password" class="form-input" placeholder="e.g. secret123" minlength="4">
+                  </div>
+                </div>
+                <div class="pro-lock-warning" id="creator-password-pro-badge" style="display: none; font-size: 0.8rem; color: var(--error);" data-i18n="warn-pro-lock">🔒 Password protection requires Pro subscription.</div>
+              </div>
+            </div>
+
+            <!-- Accordion / Toggle for Expiration Rules -->
+            <div id="creator-expiration-section" style="border-top: 1px solid var(--border-color); padding-top: 1rem; margin-top: 0.5rem; width: 100%;">
+              <div onclick="toggleCreatorExpirationAccordion()" style="display: flex; align-items: center; justify-content: space-between; cursor: pointer; color: var(--text-secondary); font-size: 0.9rem; font-weight: 600; user-select: none; margin-bottom: 0.5rem;">
+                <span style="display: flex; align-items: center; gap: 0.5rem;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                  <span data-i18n="creator-expiration-title">Expiration Rules (Optional)</span>
+                </span>
+                <span id="creator-expiration-arrow" style="font-size: 0.8rem; transform: rotate(0deg); transition: transform 0.2s;">▼</span>
+              </div>
+              
+              <div id="creator-expiration-content" style="display: none; flex-direction: column; gap: 1rem; background: rgba(255,255,255,0.01); padding: 1rem; border-radius: 8px; border: 1px dashed var(--border-color); margin-top: 0.5rem; width: 100%; box-sizing: border-box;">
+                <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0;">
+                  <input type="checkbox" id="qr-expiration-enabled" style="width: 18px; height: 18px; accent-color: var(--accent-primary);" onchange="toggleCreatorExpirationFields()">
+                  <label class="form-label" style="margin-bottom: 0; cursor: pointer;" for="qr-expiration-enabled" data-i18n="label-expiration-enable">Enable Expiration Rules</label>
+                </div>
+                <div id="creator-expiration-fields" style="display: none; flex-direction: column; gap: 0.75rem;">
+                  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; width: 100%;">
+                    <div class="form-group" style="margin-bottom: 0;">
+                      <label class="form-label" data-i18n="label-expiration-date">Expiration Date</label>
+                      <input type="datetime-local" id="qr-expiration-date" class="form-input">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                      <label class="form-label" data-i18n="label-expiration-scans">Scan Limit</label>
+                      <input type="number" id="qr-expiration-scans" class="form-input" min="1" placeholder="e.g. 500">
+                    </div>
+                  </div>
+                  <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label" data-i18n="label-expiration-fallback">Alternative Fallback URL (Optional)</label>
+                    <input type="url" id="qr-expiration-fallback" class="form-input" placeholder="https://example.com/expired-fallback">
+                  </div>
+                </div>
+                <div class="pro-lock-warning" id="creator-expiration-pro-badge" style="display: none; font-size: 0.8rem; color: var(--error);" data-i18n="warn-pro-lock">🔒 Expiration rules require Pro subscription.</div>
+              </div>
+            </div>
+
+            <!-- Accordion / Toggle for Tracking Pixels -->
+            <div id="creator-tracking-section" style="border-top: 1px solid var(--border-color); padding-top: 1rem; margin-top: 0.5rem; width: 100%;">
+              <div onclick="toggleCreatorTrackingAccordion()" style="display: flex; align-items: center; justify-content: space-between; cursor: pointer; color: var(--text-secondary); font-size: 0.9rem; font-weight: 600; user-select: none; margin-bottom: 0.5rem;">
+                <span style="display: flex; align-items: center; gap: 0.5rem;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+                  <span data-i18n="creator-tracking-title">Piksel Takibi / Analytics Tracking (Optional)</span>
+                </span>
+                <span id="creator-tracking-arrow" style="font-size: 0.8rem; transform: rotate(0deg); transition: transform 0.2s;">▼</span>
+              </div>
+              
+              <div id="creator-tracking-content" style="display: none; flex-direction: column; gap: 1rem; background: rgba(255,255,255,0.01); padding: 1rem; border-radius: 8px; border: 1px dashed var(--border-color); margin-top: 0.5rem; width: 100%; box-sizing: border-box;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; width: 100%;">
+                  <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label">Google Analytics Measurement ID</label>
+                    <input type="text" id="qr-ga-id" class="form-input" placeholder="e.g. G-XXXXXXX">
+                  </div>
+                  <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label">Facebook Pixel ID</label>
+                    <input type="text" id="qr-fb-id" class="form-input" placeholder="e.g. 1234567890">
+                  </div>
+                </div>
+                <div class="pro-lock-warning" id="creator-tracking-pro-badge" style="display: none; font-size: 0.8rem; color: var(--error);" data-i18n="warn-pro-lock">🔒 Tracking pixels require Pro subscription.</div>
+              </div>
+            </div>
+
+            <!-- Accordion / Toggle for vCard Profile -->
+            <div id="creator-vcard-section" style="border-top: 1px solid var(--border-color); padding-top: 1rem; margin-top: 0.5rem; width: 100%;">
+              <div onclick="toggleCreatorVcardAccordion()" style="display: flex; align-items: center; justify-content: space-between; cursor: pointer; color: var(--text-secondary); font-size: 0.9rem; font-weight: 600; user-select: none; margin-bottom: 0.5rem;">
+                <span style="display: flex; align-items: center; gap: 0.5rem;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                  <span data-i18n="creator-vcard-title">Dijital Kartvizit / vCard Profile (Optional)</span>
+                </span>
+                <span id="creator-vcard-arrow" style="font-size: 0.8rem; transform: rotate(0deg); transition: transform 0.2s;">▼</span>
+              </div>
+              
+              <div id="creator-vcard-content" style="display: none; flex-direction: column; gap: 1rem; background: rgba(255,255,255,0.01); padding: 1rem; border-radius: 8px; border: 1px dashed var(--border-color); margin-top: 0.5rem; width: 100%; box-sizing: border-box;">
+                <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0;">
+                  <input type="checkbox" id="qr-vcard-enabled" style="width: 18px; height: 18px; accent-color: var(--accent-primary);" onchange="toggleCreatorVcardFields()">
+                  <label class="form-label" style="margin-bottom: 0; cursor: pointer;" for="qr-vcard-enabled" data-i18n="label-vcard-enable">Enable vCard Profile Link</label>
+                </div>
+                <div id="creator-vcard-fields" style="display: none; flex-direction: column; gap: 0.75rem;">
+                  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; width: 100%;">
+                    <div class="form-group" style="margin-bottom: 0;">
+                      <label class="form-label">Full Name</label>
+                      <input type="text" id="vcard-name" class="form-input" placeholder="John Doe">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                      <label class="form-label">Job Title</label>
+                      <input type="text" id="vcard-title" class="form-input" placeholder="Software Engineer">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                      <label class="form-label">Company Name</label>
+                      <input type="text" id="vcard-company" class="form-input" placeholder="Acme Corp">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                      <label class="form-label">Phone Number</label>
+                      <input type="tel" id="vcard-phone" class="form-input" placeholder="+905551234567">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                      <label class="form-label">Email Address</label>
+                      <input type="email" id="vcard-email" class="form-input" placeholder="john@example.com">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                      <label class="form-label">Website</label>
+                      <input type="url" id="vcard-website" class="form-input" placeholder="https://example.com">
+                    </div>
+                  </div>
+                  <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label">Address</label>
+                    <input type="text" id="vcard-address" class="form-input" placeholder="e.g. Sisli, Istanbul">
+                  </div>
+                  <h5 style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-secondary);">Social Accounts (Username or Link)</h5>
+                  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; width: 100%;">
+                    <div class="form-group" style="margin-bottom: 0;">
+                      <label class="form-label">Instagram</label>
+                      <input type="text" id="vcard-instagram" class="form-input" placeholder="@handle">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                      <label class="form-label">Facebook</label>
+                      <input type="text" id="vcard-facebook" class="form-input" placeholder="username">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                      <label class="form-label">LinkedIn</label>
+                      <input type="text" id="vcard-linkedin" class="form-input" placeholder="in/username">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                      <label class="form-label">Twitter / X</label>
+                      <input type="text" id="vcard-twitter" class="form-input" placeholder="username">
+                    </div>
+                  </div>
+                </div>
+                <div class="pro-lock-warning" id="creator-vcard-pro-badge" style="display: none; font-size: 0.8rem; color: var(--error);" data-i18n="warn-pro-lock">🔒 vCard profile requires Pro subscription.</div>
+              </div>
+            </div>
+
+            <!-- Accordion / Toggle for OS Redirection -->
+            <div id="creator-os-section" style="border-top: 1px solid var(--border-color); padding-top: 1rem; margin-top: 0.5rem; width: 100%;">
+              <div onclick="toggleCreatorOsAccordion()" style="display: flex; align-items: center; justify-content: space-between; cursor: pointer; color: var(--text-secondary); font-size: 0.9rem; font-weight: 600; user-select: none; margin-bottom: 0.5rem;">
+                <span style="display: flex; align-items: center; gap: 0.5rem;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>
+                  <span data-i18n="creator-os-title">Cihaz OS Yönlendirmesi / OS Redirection (Optional)</span>
+                </span>
+                <span id="creator-os-arrow" style="font-size: 0.8rem; transform: rotate(0deg); transition: transform 0.2s;">▼</span>
+              </div>
+              
+              <div id="creator-os-content" style="display: none; flex-direction: column; gap: 1rem; background: rgba(255,255,255,0.01); padding: 1rem; border-radius: 8px; border: 1px dashed var(--border-color); margin-top: 0.5rem; width: 100%; box-sizing: border-box;">
+                <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0;">
+                  <input type="checkbox" id="qr-os-enabled" style="width: 18px; height: 18px; accent-color: var(--accent-primary);" onchange="toggleCreatorOsFields()">
+                  <label class="form-label" style="margin-bottom: 0; cursor: pointer;" for="qr-os-enabled" data-i18n="label-os-enable">Enable Device OS Redirection</label>
+                </div>
+                <div id="creator-os-fields" style="display: none; flex-direction: column; gap: 0.75rem;">
+                  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; width: 100%;">
+                    <div class="form-group" style="margin-bottom: 0;">
+                      <label class="form-label">iOS Target URL (App Store)</label>
+                      <input type="url" id="qr-ios-url" class="form-input" placeholder="https://apps.apple.com/app/id...">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                      <label class="form-label">Android Target URL (Google Play)</label>
+                      <input type="url" id="qr-android-url" class="form-input" placeholder="https://play.google.com/store/apps/details?...">
+                    </div>
+                  </div>
+                </div>
+                <div class="pro-lock-warning" id="creator-os-pro-badge" style="display: none; font-size: 0.8rem; color: var(--error);" data-i18n="warn-agency-lock">🔒 OS-based smart routing requires Agency subscription.</div>
+              </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="height: 42px; align-self: flex-start; padding: 0 2rem; margin-top: 0.5rem;" data-i18n="btn-create-code">Create Code</button>
+          </form>
+
+          <!-- Form 2: Bulk CSV Creator -->
+          <form id="bulk-qr-form" onsubmit="handleBulkCreate(event)" style="display: none; flex-direction: column; gap: 1rem;">
+            <div class="form-group" style="margin-bottom: 0; width: 100%;">
+              <label class="form-label" data-i18n="label-bulk-csv">CSV Data (Format: Title, ShortCode, DestinationURL - One per line)</label>
+              <textarea id="bulk-csv-data" class="form-input" rows="5" style="resize: none; font-family: monospace; font-size: 0.9rem;" placeholder="Table 1,table1,https://my.com/menu.pdf&#10;Table 2,table2,https://my.com/menu.pdf&#10;Table 3,table3,https://my.com/menu.pdf"></textarea>
+            </div>
+            
+            <div id="bulk-pro-badge" class="alert alert-warning" style="display: none; padding: 0.75rem; margin-bottom: 0; width: 100%;">
+              <span data-i18n="e-bulk-pro-lock">🔒 Bulk creation requires a Pro or Agency subscription.</span>
+            </div>
+
+            <button type="submit" id="btn-bulk-submit" class="btn btn-primary" style="align-self: flex-start; height: 42px;" data-i18n="btn-bulk-create">Create Bulk QRs</button>
+          </form>
+        </div>
+        
+        <!-- Active QR List grid -->
+        <h3 style="font-size: 1.25rem; margin-bottom: 1.5rem;" data-i18n="active-qr-header">Active QR Codes</h3>
+        <div id="qrs-container" class="qr-grid">
+          <!-- Rendered QR Cards go here -->
+        </div>
+      </div>
+      
+      <!-- TAB: Billing -->
+      <div id="tab-billing" class="tab-content">
+        <div class="glass-panel" style="max-width: 600px; padding: 2.5rem;">
+          <h3 style="font-size: 1.5rem; margin-bottom: 1rem;" data-i18n="b-title">Subscription Summary</h3>
+          
+          <div style="background: rgba(255,255,255,0.02); padding: 1.5rem; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 2rem;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+              <span style="color: var(--text-secondary);" data-i18n="b-plan">Current Plan:</span>
+              <strong id="billing-tier-name" style="color: var(--accent-primary);">Free Plan</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+              <span style="color: var(--text-secondary);" data-i18n="b-scans">Monthly Redirect Limit:</span>
+              <strong id="billing-scans-limit">100 scans / month</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+              <span style="color: var(--text-secondary);" data-i18n="b-qrs">Dynamic QR Codes Limit:</span>
+              <strong id="billing-qrs-limit">1 dynamic code</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px dashed var(--border-color);">
+              <span style="color: var(--text-secondary);" data-i18n="b-sub-status">Payment Status:</span>
+              <strong id="billing-sub-status" style="color: var(--success);">Active</strong>
+            </div>
+            <div id="billing-expire-row" style="display: flex; justify-content: space-between; margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px dashed var(--border-color); display: none;">
+              <span style="color: var(--text-secondary);" data-i18n="b-expire-date">Next Renewal Date:</span>
+              <strong id="billing-expire-date" style="color: var(--text-primary);">—</strong>
+            </div>
+          </div>
+          
+          <div id="billing-upgrade-promo" style="display: none;">
+            <h4 style="margin-bottom: 0.5rem;" data-i18n="b-up-title">Upgrade to QRAurify Pro</h4>
+            <p style="color: var(--text-secondary); margin-bottom: 1.5rem; font-size: 0.95rem;" data-i18n="b-up-desc">Unlock unlimited codes, unlimited scans, and custom branding for just $12/month.</p>
+            <button onclick="openUpgradeModal()" class="btn btn-primary" data-i18n="b-up-btn">Upgrade Now</button>
+          </div>
+          
+          <div id="billing-active-promo" style="display: none; border: 1px solid rgba(16, 185, 129, 0.2); background: rgba(16, 185, 129, 0.05); padding: 1.25rem; border-radius: 8px; color: var(--success); font-weight: 600;" data-i18n="b-up-active">
+            ⚡ Pro Plan active. Thank you for your support!
+          </div>
+
+          <!-- Subscription Simulator controls -->
+          <div class="glass-panel" style="margin-top: 2.5rem; padding: 1.5rem; border-color: rgba(239, 68, 68, 0.2); background: rgba(239, 68, 68, 0.02);">
+            <h4 style="color: var(--error); margin-bottom: 0.5rem;" data-i18n="sim-title">Billing & Subscription Simulator</h4>
+            <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1.25rem;" data-i18n="sim-desc">Simulate subscription payment issues to test QR redirection lockouts.</p>
+            <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+              <button onclick="simulateBillingStatus('unpaid')" class="btn btn-danger" style="padding: 0.5rem 1rem; font-size: 0.85rem;" data-i18n="btn-sim-fail">Simulate Payment Failure</button>
+              <button onclick="simulateBillingStatus('active')" class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.85rem; border-color: var(--success); color: var(--success);" data-i18n="btn-sim-success">Simulate Payment Success</button>
+            </div>
+          </div>
+
+          <!-- Agency Custom Domain card -->
+          <div id="agency-domain-card" class="glass-panel" style="max-width: 600px; padding: 2.5rem; margin-top: 2rem; display: none;">
+            <h3 style="font-size: 1.5rem; margin-bottom: 0.5rem;" data-i18n="dom-title">Agency Custom Domain</h3>
+            <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 1.5rem;" data-i18n="dom-desc">Route your QR codes through your own brand domain instead of qraurify.com.</p>
+            
+            <div style="background: rgba(255,255,255,0.02); padding: 1.25rem; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 1.5rem; font-size: 0.85rem;">
+              <span style="color: #fff; font-weight: 600; display: block; margin-bottom: 0.5rem;" data-i18n="dom-instructions">DNS Setup Instructions:</span>
+              <span style="color: var(--text-secondary);" data-i18n="dom-dns-text">Add a CNAME record in your DNS provider pointing your subdomain (e.g. <code>qr.mybrand.com</code>) to <code>cname.qraurify.com</code>.</span>
+            </div>
+
+            <form id="custom-domain-form" onsubmit="handleSaveDomain(event)" style="display: flex; gap: 1rem; align-items: flex-end;">
+              <div class="form-group" style="flex-grow: 1; margin-bottom: 0;">
+                <label class="form-label" data-i18n="label-domain">Custom Domain Subdomain</label>
+                <input type="text" id="agency-custom-domain" class="form-input" style="padding: 0.5rem 0.75rem; font-size: 0.9rem;" placeholder="e.g. qr.myrestaurant.com" required>
+              </div>
+              <button type="submit" class="btn btn-primary" style="height: 42px;" data-i18n="btn-save-domain">Configure</button>
+            </form>
+            
+            <div id="domain-status-box" style="margin-top: 1.5rem; font-size: 0.9rem; display: none; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+              <span style="color: var(--text-secondary);" data-i18n="dom-status-label">Status:</span>
+              <strong id="domain-status-badge" style="color: var(--warning);">Pending DNS Verification</strong>
+              <button onclick="simulateVerifyDomain()" class="btn btn-secondary" style="padding: 0.25rem 0.75rem; font-size: 0.8rem;" data-i18n="btn-verify-domain">Verify DNS</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Dynamic QR Settings Edit Modal -->
+  <div id="edit-modal" class="modal-overlay">
+    <div class="glass-panel modal-content" style="max-width: 460px;">
+      <button class="modal-close" onclick="closeEditModal()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
+      <h3 style="font-size: 1.6rem; margin-bottom: 0.25rem;" data-i18n="e-title">Edit QR Code Settings</h3>
+      <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 1.5rem;" data-i18n="e-desc">Modify the dynamic properties of your link instantly.</p>
+      
+      <div id="edit-error" style="color: var(--error); font-size: 0.9rem; margin-bottom: 1rem; display: none;"></div>
+
+      <form id="edit-qr-form" onsubmit="handleSaveEdit(event)">
+        <input type="hidden" id="edit-id">
+        <div class="form-group">
+          <label class="form-label" data-i18n="label-title">Reference Title</label>
+          <input type="text" id="edit-title" class="form-input" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" data-i18n="label-slug">Short Code Slug</label>
+          <input type="text" id="edit-code" class="form-input" pattern="[a-zA-Z0-9_-]+" title="Only letters, numbers, dashes, underscores" required>
+        </div>
+        <div class="form-group" id="edit-target-url-group">
+          <label class="form-label" data-i18n="label-target">Target Destination URL</label>
+          <input type="url" id="edit-target" class="form-input" required>
+        </div>
+        
+        <!-- Time-Based Redirection Section -->
+        <h4 style="font-size: 1rem; margin-top: 1.5rem; margin-bottom: 0.75rem; border-top: 1px solid var(--border-color); padding-top: 1rem;" data-i18n="e-time-title">Time-Based Smart Redirection (Pro Only)</h4>
+        
+        <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem; background: rgba(255,255,255,0.02); padding: 0.75rem; border-radius: 6px; border: 1px solid var(--border-color);">
+          <input type="checkbox" id="edit-time-enabled" style="width: 18px; height: 18px; accent-color: var(--accent-primary);" onchange="toggleTimeInputs()">
+          <label class="form-label" style="margin-bottom: 0; cursor: pointer;" for="edit-time-enabled" data-i18n="e-label-time-enable">Enable alternate link based on time</label>
+        </div>
+        
+        <div id="time-inputs-container" style="display: none; flex-direction: column; gap: 1rem; margin-bottom: 1.5rem;">
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" data-i18n="e-label-time-target">Alternative Destination URL (Active Hours)</label>
+            <input type="url" id="edit-time-target" class="form-input" placeholder="https://example.com/dinner-menu.pdf">
+          </div>
+          <div style="display: flex; gap: 1rem;">
+            <div class="form-group" style="flex: 1; margin-bottom: 0;">
+              <label class="form-label" data-i18n="e-label-time-start">Start Hour (0-23)</label>
+              <input type="number" id="edit-time-start" class="form-input" min="0" max="23" value="17">
+            </div>
+            <div class="form-group" style="flex: 1; margin-bottom: 0;">
+              <label class="form-label" data-i18n="e-label-time-end">End Hour (0-23)</label>
+              <input type="number" id="edit-time-end" class="form-input" min="0" max="23" value="23">
+            </div>
+          </div>
+        </div>
+        
+        <div id="edit-time-pro-badge" class="alert alert-warning" style="display: none; padding: 0.75rem; margin-bottom: 1.5rem;" data-i18n="e-time-pro-lock">
+          <span>🔒 Time-based redirect requires Pro plan.</span>
+        </div>
+
+        <!-- PRO Styling Section -->
+        <h4 style="font-size: 1rem; margin-top: 1.5rem; margin-bottom: 0.75rem; border-top: 1px solid var(--border-color); padding-top: 1rem;" data-i18n="e-pro-title">QR Code Styling (Pro Only)</h4>
+        
+        <div class="form-group">
+          <label class="form-label" data-i18n="e-label-color">Foreground Color</label>
+          <div class="color-picker-wrapper">
+            <input type="color" id="edit-brand-color" class="color-preview" value="#000000" disabled onchange="updateColorText('edit-brand-color','edit-brand-color-text')">
+            <span id="edit-brand-color-text" style="font-family: monospace; font-size: 0.9rem;">#000000</span>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label" data-i18n="e-label-logo">Center Logo Image</label>
+          <div style="display: flex; gap: 0.5rem; align-items: center;">
+            <input type="file" id="edit-logo-file" accept="image/png, image/jpeg, image/jpg" style="display: none;" onchange="handleFileChange('edit-logo-file', 'edit-logo-preview', 'edit-logo-url')" disabled>
+            <button type="button" class="btn btn-secondary" onclick="document.getElementById('edit-logo-file').click()" id="btn-upload-edit-logo" style="padding: 0.5rem 1rem; font-size: 0.85rem; display: flex; align-items: center; gap: 0.25rem;" disabled>
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              <span data-i18n="btn-upload-file">Choose File</span>
+            </button>
+            <span id="edit-logo-preview" style="font-size: 0.75rem; color: var(--text-secondary); max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">No file selected</span>
+            <input type="hidden" id="edit-logo-url">
+          </div>
+        </div>
+        
+        <div id="edit-pro-badge" class="alert alert-warning" style="display: none; padding: 0.75rem; margin-bottom: 1.5rem;" data-i18n="e-pro-lock">
+                  <span>🔒 Colors and Logo overlays require Pro plan.</span>
+        </div>
+
+        <!-- PRO Password Section -->
+        <h4 style="font-size: 1rem; margin-top: 1.5rem; margin-bottom: 0.75rem; border-top: 1px solid var(--border-color); padding-top: 1rem;" data-i18n="edit-password-section-title">Password Protection (Pro Only)</h4>
+        
+        <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem; background: rgba(255,255,255,0.02); padding: 0.75rem; border-radius: 6px; border: 1px solid var(--border-color);">
+          <input type="checkbox" id="edit-password-enabled" style="width: 18px; height: 18px; accent-color: var(--accent-primary);" onchange="toggleEditPasswordFields()">
+          <label class="form-label" style="margin-bottom: 0; cursor: pointer;" for="edit-password-enabled" data-i18n="label-password-enable">Enable Password Protection</label>
+        </div>
+        
+        <div id="edit-password-fields-container" style="display: none; flex-direction: column; gap: 1rem; margin-bottom: 1rem;">
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" data-i18n="label-qr-password">Access Password</label>
+            <input type="password" id="edit-password" class="form-input" placeholder="e.g. secret123" minlength="4">
+          </div>
+        </div>
+
+        <!-- PRO Expiration Section -->
+        <h4 style="font-size: 1rem; margin-top: 1.5rem; margin-bottom: 0.75rem; border-top: 1px solid var(--border-color); padding-top: 1rem;" data-i18n="edit-expiration-section-title">Expiration Rules (Pro Only)</h4>
+        
+        <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem; background: rgba(255,255,255,0.02); padding: 0.75rem; border-radius: 6px; border: 1px solid var(--border-color);">
+          <input type="checkbox" id="edit-expiration-enabled" style="width: 18px; height: 18px; accent-color: var(--accent-primary);" onchange="toggleEditExpirationFields()">
+          <label class="form-label" style="margin-bottom: 0; cursor: pointer;" for="edit-expiration-enabled" data-i18n="label-expiration-enable">Enable Expiration Rules</label>
+        </div>
+        
+        <div id="edit-expiration-fields-container" style="display: none; flex-direction: column; gap: 1rem; margin-bottom: 1.5rem;">
+          <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+            <div class="form-group" style="flex: 1; min-width: 150px; margin-bottom: 0;">
+              <label class="form-label" data-i18n="label-expiration-date">Expiration Date</label>
+              <input type="datetime-local" id="edit-expiration-date" class="form-input">
+            </div>
+            <div class="form-group" style="flex: 1; min-width: 150px; margin-bottom: 0;">
+              <label class="form-label" data-i18n="label-expiration-scans">Scan Limit</label>
+              <input type="number" id="edit-expiration-scans" class="form-input" min="1" placeholder="e.g. 500">
+            </div>
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" data-i18n="label-expiration-fallback">Alternative Fallback URL (Optional)</label>
+            <input type="url" id="edit-expiration-fallback" class="form-input" placeholder="https://example.com/expired-fallback">
+          </div>
+        </div>
+
+        <!-- PRO Tracking Section -->
+        <h4 style="font-size: 1rem; margin-top: 1.5rem; margin-bottom: 0.75rem; border-top: 1px solid var(--border-color); padding-top: 1rem;" data-i18n="edit-tracking-section-title">Piksel Takibi (Pro Only)</h4>
+        
+        <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem;">
+          <div class="form-group" style="flex: 1; min-width: 150px; margin-bottom: 0;">
+            <label class="form-label">Google Analytics Measurement ID</label>
+            <input type="text" id="edit-ga-id" class="form-input" placeholder="e.g. G-XXXXXXX">
+          </div>
+          <div class="form-group" style="flex: 1; min-width: 150px; margin-bottom: 0;">
+            <label class="form-label">Facebook Pixel ID</label>
+            <input type="text" id="edit-fb-id" class="form-input" placeholder="e.g. 1234567890">
+          </div>
+        </div>
+
+        <!-- PRO vCard Section -->
+        <h4 style="font-size: 1rem; margin-top: 1.5rem; margin-bottom: 0.75rem; border-top: 1px solid var(--border-color); padding-top: 1rem;" data-i18n="edit-vcard-section-title">Dijital Kartvizit (Pro Only)</h4>
+        
+        <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem; background: rgba(255,255,255,0.02); padding: 0.75rem; border-radius: 6px; border: 1px solid var(--border-color);">
+          <input type="checkbox" id="edit-vcard-enabled" style="width: 18px; height: 18px; accent-color: var(--accent-primary);" onchange="toggleEditVcardFields()">
+          <label class="form-label" style="margin-bottom: 0; cursor: pointer;" for="edit-vcard-enabled" data-i18n="label-vcard-enable">Enable vCard Profile Link</label>
+        </div>
+        
+        <div id="edit-vcard-fields-container" style="display: none; flex-direction: column; gap: 1rem; margin-bottom: 1rem;">
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; width: 100%;">
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label">Full Name</label>
+              <input type="text" id="edit-vcard-name" class="form-input" placeholder="John Doe">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label">Job Title</label>
+              <input type="text" id="edit-vcard-title" class="form-input" placeholder="Software Engineer">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label">Company Name</label>
+              <input type="text" id="edit-vcard-company" class="form-input" placeholder="Acme Corp">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label">Phone Number</label>
+              <input type="tel" id="edit-vcard-phone" class="form-input" placeholder="+905551234567">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label">Email Address</label>
+              <input type="email" id="edit-vcard-email" class="form-input" placeholder="john@example.com">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label">Website</label>
+              <input type="url" id="edit-vcard-website" class="form-input" placeholder="https://example.com">
+            </div>
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label">Address</label>
+            <input type="text" id="edit-vcard-address" class="form-input" placeholder="e.g. Sisli, Istanbul">
+          </div>
+          <h5 style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-secondary);">Social Accounts</h5>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; width: 100%;">
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label">Instagram</label>
+              <input type="text" id="edit-vcard-instagram" class="form-input">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label">Facebook</label>
+              <input type="text" id="edit-vcard-facebook" class="form-input">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label">LinkedIn</label>
+              <input type="text" id="edit-vcard-linkedin" class="form-input">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label">Twitter / X</label>
+              <input type="text" id="edit-vcard-twitter" class="form-input">
+            </div>
+          </div>
+        </div>
+
+        <!-- AGENCY OS Redirect Section -->
+        <h4 style="font-size: 1rem; margin-top: 1.5rem; margin-bottom: 0.75rem; border-top: 1px solid var(--border-color); padding-top: 1rem;" data-i18n="edit-os-section-title">Cihaz OS Yönlendirmesi (Agency Only)</h4>
+        
+        <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem; background: rgba(255,255,255,0.02); padding: 0.75rem; border-radius: 6px; border: 1px solid var(--border-color);">
+          <input type="checkbox" id="edit-os-enabled" style="width: 18px; height: 18px; accent-color: var(--accent-primary);" onchange="toggleEditOsFields()">
+          <label class="form-label" style="margin-bottom: 0; cursor: pointer;" for="edit-os-enabled" data-i18n="label-os-enable">Enable Device OS Redirection</label>
+        </div>
+        
+        <div id="edit-os-fields-container" style="display: none; flex-direction: column; gap: 1rem; margin-bottom: 1.5rem;">
+          <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+            <div class="form-group" style="flex: 1; min-width: 150px; margin-bottom: 0;">
+              <label class="form-label">iOS Target URL (App Store)</label>
+              <input type="url" id="edit-ios-url" class="form-input" placeholder="https://apps.apple.com/app/id...">
+            </div>
+            <div class="form-group" style="flex: 1; min-width: 150px; margin-bottom: 0;">
+              <label class="form-label">Android Target URL (Google Play)</label>
+              <input type="url" id="edit-android-url" class="form-input" placeholder="https://play.google.com/store/apps/details?...">
+            </div>
+          </div>
+        </div>
+
+        <div id="edit-features-pro-badge" class="alert alert-warning" style="display: none; padding: 0.75rem; margin-bottom: 1.5rem;" data-i18n="warn-pro-lock">
+          <span>🔒 Password protection, Expiration, Tracking, and vCard require a Pro subscription.</span>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;" data-i18n="btn-save-changes">Save Changes</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Subscription Upgrade Modal Dialog -->
+  <div id="upgrade-modal" class="modal-overlay">
+    <div class="glass-panel modal-content" style="max-width: 510px;">
+      <button class="modal-close" onclick="closeUpgradeModal()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
+      <h3 style="font-size: 1.8rem; margin-bottom: 0.25rem; text-align: center;" data-i18n="up-title">QRAurify'ye Yükselt</h3>
+      <p style="color: var(--text-secondary); text-align: center; margin-bottom: 1.5rem;" data-i18n="up-desc">Sınırsız tarama, dinamik link ve logo özelliklerini aç.</p>
+      
+      <!-- Manuel Ödeme Formu -->
+      <div class="sim-checkout" id="checkout-form-container">
+        <div class="sim-checkout-header" data-i18n="chk-header" style="background: linear-gradient(135deg, rgba(225,29,72,0.15) 0%, rgba(244,63,94,0.1) 100%); border: 1px solid rgba(225,29,72,0.25); border-radius: 8px; padding: 0.75rem 1rem; margin-bottom: 1.25rem; font-weight: 700; font-size: 0.9rem; text-align: center;">
+          💳 Shopier ile Güvenli Ödeme
+        </div>
+        
+        <div class="form-group" id="plan-selection-group">
+          <label class="form-label" style="font-size: 0.85rem;" data-i18n="chk-label-tier">Paket Seçin</label>
+          <select id="checkout-tier" class="form-input" onchange="updateCheckoutPrice()" style="padding: 0.5rem 0.75rem; font-size: 0.9rem;">
+            <option value="pro" data-i18n="opt-pro">Pro Plan - 500,00 TL / ay</option>
+            <option value="agency" data-i18n="opt-agency">Ajans Planı - 1.000,00 TL / ay</option>
+          </select>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; font-size: 0.95rem; border-top: 1px dashed var(--border-color); padding-top: 1rem;" id="price-summary-group">
+          <span id="checkout-item-name" style="color: var(--text-secondary);">QRAurify Pro Aylık Abonelik</span>
+          <strong id="checkout-price-display" style="color: var(--accent-primary); font-size: 1.1rem;">500,00 TL / ay</strong>
+        </div>
+
+        <!-- Instructions -->
+        <div style="font-size: 0.85rem; color: var(--text-secondary); background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; margin-bottom: 1.25rem; line-height: 1.6;">
+          <strong style="color: var(--text-primary); display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.5rem;" data-i18n="up-steps-title">
+            Ödeme Adımları:
+          </strong>
+          <span data-i18n="up-steps-body">
+            1. Seçtiğiniz pakete göre aşağıdaki <strong>"Shopier ile Öde"</strong> butonuna tıklayıp açılan sayfada ödemenizi tamamlayın (Ödeme formuna QRAurify'a kayıtlı e-posta adresinizi girmeniz gerekmektedir).<br>
+            2. Ödeme tamamlandıktan sonra sistem hesabınızı otomatik olarak yükseltecektir. Kontrol etmek için aşağıdaki <strong>"Ödemeyi Kontrol Et / Yenile"</strong> butonuna basabilirsiniz.
+          </span>
+        </div>
+
+        <!-- Shopier Checkout Link Button -->
+        <a href="#" id="checkout-shopier-btn" target="_blank" class="btn btn-secondary" style="width: 100%; margin-bottom: 0.75rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem; text-decoration: none; font-weight: 600; background: linear-gradient(135deg, #e11d48 0%, #be123c 100%); color: white; border: none; height: 42px;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+          Shopier ile Öde (Yeni Sekmede)
+        </a>
+
+        <button type="button" id="checkout-submit-btn" class="btn btn-primary" onclick="checkPaymentStatus()" style="width: 100%; padding: 0.75rem; font-size: 1rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+          Ödemeyi Kontrol Et / Yenile
+        </button>
+      </div>
+      <p style="text-align: center; font-size: 0.75rem; color: var(--text-muted); margin-top: 1rem;" data-i18n="chk-footer">
+        Ödemeleriniz Shopier güvencesiyle 256-bit SSL korumalı sayfa üzerinden güvenle gerçekleştirilir.
+      </p>
+    </div>
+  </div>
+
+  <script src="/dashboard.js"></script>
+</body>
+</html>

@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bağlantı Süresi Doldu / Link Expired</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #0f172a;
+      --accent: #ef4444;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --border: rgba(255,255,255,0.08);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: var(--bg-dark);
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 1.5rem;
+    }
+    .panel {
+      width: 100%;
+      max-width: 420px;
+      background: rgba(30, 41, 59, 0.7);
+      border: 1px solid var(--border);
+      padding: 3rem 2rem;
+      border-radius: 16px;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      box-shadow: 0 16px 48px rgba(0,0,0,0.4);
+      text-align: center;
+    }
+    .icon {
+      font-size: 3rem;
+      margin-bottom: 1.25rem;
+      color: var(--accent);
+    }
+    h1 {
+      font-size: 1.6rem;
+      font-weight: 700;
+      margin-bottom: 0.75rem;
+      letter-spacing: -0.025em;
+    }
+    p {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      margin-bottom: 2rem;
+      line-height: 1.6;
+    }
+    .btn {
+      display: inline-block;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border);
+      color: #ffffff;
+      padding: 0.8rem 1.5rem;
+      border-radius: 8px;
+      font-family: inherit;
+      font-weight: 600;
+      font-size: 0.9rem;
+      text-decoration: none;
+      transition: background-color 0.2s;
+    }
+    .btn:hover {
+      background: rgba(255,255,255,0.1);
+    }
+    .footer {
+      margin-top: 2.5rem;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+    .footer a {
+      color: #8b5cf6;
+      text-decoration: none;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <div class="panel">
+    <div class="icon">⌛</div>
+    <h1 id="lbl-title">Bağlantı Süresi Doldu</h1>
+    <p id="lbl-desc">Ulaşmaya çalıştığınız kampanya veya yönlendirmenin geçerlilik süresi ya da tarama limiti dolmuştur.</p>
+    
+    <a href="/" class="btn" id="lbl-btn">Ana Sayfaya Dön</a>
+    
+    <div class="footer">
+      <p><span id="lbl-footer">Bağlantı altyapısı</span> <a href="/">QRAurify</a></p>
+    </div>
+  </div>
+
+  <script>
+    const lang = navigator.language.startsWith('tr') ? 'tr' : 'en';
+    const content = {
+      tr: {
+        title: 'Geçerlilik Süresi Doldu',
+        desc: 'Ulaşmaya çalıştığınız kampanya veya yönlendirme bağlantısının geçerlilik süresi ya da tarama limiti dolmuştur.',
+        btn: 'Ana Sayfaya Git',
+        footer: 'Bağlantı altyapısı'
+      },
+      en: {
+        title: 'Link Expired',
+        desc: 'The active period or redirect scan limit for this marketing link/campaign has expired.',
+        btn: 'Go to Home',
+        footer: 'Powered by'
+      }
+    }[lang];
+
+    document.getElementById('lbl-title').innerText = content.title;
+    document.getElementById('lbl-desc').innerText = content.desc;
+    document.getElementById('lbl-btn').innerText = content.btn;
+    document.getElementById('lbl-footer').innerText = content.footer;
+  </script>
+</body>
+</html>

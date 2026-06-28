@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Profile - QRAurify</title>
+  <meta name="description" content="Manage your QRAurify account profile, password, and plan details.">
+  <link rel="stylesheet" href="/app.css">
+</head>
+<body>
+
+  <div class="dashboard-layout">
+    
+    <!-- Sidebar Navigation -->
+    <aside class="dashboard-sidebar">
+      <div class="logo sidebar-logo">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+          <rect x="7" y="7" width="3" height="3"></rect>
+          <rect x="14" y="7" width="3" height="3"></rect>
+          <rect x="7" y="14" width="3" height="3"></rect>
+          <line x1="14" y1="14" x2="14" y2="14.01"></line>
+        </svg>
+        <span>QRAurify</span>
+      </div>
+      
+      <ul class="sidebar-nav">
+        <li class="sidebar-item">
+          <a href="/dashboard.html">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+            <span data-i18n="side-dashboard">Dashboard</span>
+          </a>
+        </li>
+        <li class="sidebar-item active">
+          <a href="/profile.html">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+            <span data-i18n="side-profile">My Profile</span>
+          </a>
+        </li>
+      </ul>
+      
+      <div class="sidebar-footer">
+        <div class="user-info" style="position: relative;">
+          <div class="user-avatar" id="user-avatar">M</div>
+          <div class="user-details">
+            <span id="user-display-name" style="font-weight: 600; font-size: 0.85rem;"></span>
+            <span id="user-email" style="font-size: 0.75rem; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 140px;">user@company.com</span>
+            <span id="user-tier" style="color: var(--text-secondary); font-weight: 600; font-size: 0.75rem;" data-i18n="free-plan">Free Plan</span>
+          </div>
+        </div>
+        <button onclick="handleLogout()" class="btn btn-secondary" style="padding: 0.5rem; font-size: 0.85rem; width: 100%; margin-top: 0.5rem;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 0.25rem;"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+          <span data-i18n="btn-logout">Log Out</span>
+        </button>
+      </div>
+    </aside>
+    
+    <!-- Main Content Area -->
+    <main class="dashboard-main">
+      <div class="dashboard-header">
+        <div>
+          <h1 id="profile-title-header" style="font-size: 2.2rem; margin-bottom: 0.25rem;" data-i18n="profile-title">My Profile</h1>
+          <p id="profile-desc-header" style="color: var(--text-secondary);" data-i18n="profile-desc">Manage your account details, password, and plan.</p>
+        </div>
+        <div style="display: flex; align-items: center; gap: 1rem;">
+          <div class="lang-switcher">
+            <button onclick="setLanguage('tr')" id="lang-btn-tr" class="lang-btn">TR</button>
+            <span style="color: var(--border-color); font-size: 0.85rem;">|</span>
+            <button onclick="setLanguage('en')" id="lang-btn-en" class="lang-btn">EN</button>
+          </div>
+          <a href="/dashboard.html" class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.85rem;" data-i18n="profile-back-dash">
+            ← Back to Dashboard
+          </a>
+        </div>
+      </div>
+
+      <div style="display: grid; gap: 2rem; max-width: 700px;">
+
+        <!-- Account Info Card -->
+        <div class="glass-panel" style="padding: 2rem;">
+          <!-- Avatar Large -->
+          <div style="display: flex; align-items: center; gap: 1.5rem; margin-bottom: 2rem;">
+            <div id="profile-avatar-large" style="width: 72px; height: 72px; border-radius: 50%; background: var(--accent-gradient); display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: 700; font-family: var(--font-heading); color: white; flex-shrink: 0;">M</div>
+            <div>
+              <h3 id="profile-display-name-header" style="font-size: 1.5rem; margin-bottom: 0.25rem;"></h3>
+              <p id="profile-email-header" style="color: var(--text-secondary); font-size: 0.9rem;"></p>
+              <span id="profile-plan-badge" style="display: inline-block; margin-top: 0.35rem; padding: 0.2rem 0.65rem; border-radius: 20px; font-size: 0.75rem; font-weight: 700; background: rgba(139,92,246,0.15); color: var(--accent-primary); border: 1px solid rgba(139,92,246,0.3);" data-i18n="free-plan">Free Plan</span>
+            </div>
+          </div>
+
+          <h4 style="font-size: 1rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border-color);" data-i18n="profile-card-title">Account Details</h4>
+          
+          <div id="profile-info-display">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 0.75rem; font-size: 0.9rem;">
+              <span style="color: var(--text-secondary);" data-i18n="profile-lbl-name">Display Name:</span>
+              <strong id="detail-display-name">—</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 0.75rem; font-size: 0.9rem;">
+              <span style="color: var(--text-secondary);" data-i18n="profile-lbl-email">Email Address:</span>
+              <strong id="detail-email">—</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 0.75rem; font-size: 0.9rem;">
+              <span style="color: var(--text-secondary);" data-i18n="profile-lbl-plan">Active Plan:</span>
+              <strong id="detail-plan" style="color: var(--accent-primary);">—</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 0.75rem; font-size: 0.9rem;">
+              <span style="color: var(--text-secondary);" data-i18n="profile-lbl-status">Subscription Status:</span>
+              <strong id="detail-status" style="color: var(--success);">Active</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 1.5rem; font-size: 0.9rem;">
+              <span style="color: var(--text-secondary);" data-i18n="profile-lbl-joined">Member Since:</span>
+              <strong id="detail-joined">—</strong>
+            </div>
+            <button onclick="showEditProfile()" class="btn btn-secondary" style="padding: 0.5rem 1.5rem; font-size: 0.85rem;" data-i18n="profile-btn-edit-name">Edit Display Name</button>
+          </div>
+
+          <!-- Edit Profile Form (hidden by default) -->
+          <div id="profile-edit-form" style="display: none;">
+            <div id="profile-edit-error" style="color: var(--error); font-size: 0.9rem; margin-bottom: 1rem; display: none;"></div>
+            <form onsubmit="handleSaveProfile(event)">
+              <div class="form-group">
+                <label class="form-label" data-i18n="profile-edit-lbl-name">Display Name</label>
+                <input type="text" id="edit-display-name" class="form-input" placeholder="Your name or business name">
+              </div>
+              <div style="display: flex; gap: 1rem;">
+                <button type="submit" class="btn btn-primary" style="padding: 0.5rem 1.5rem; font-size: 0.85rem;" data-i18n="btn-save-changes">Save Changes</button>
+                <button type="button" onclick="cancelEditProfile()" class="btn btn-secondary" style="padding: 0.5rem 1.5rem; font-size: 0.85rem;" data-i18n="profile-btn-cancel">Cancel</button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- Change Password Card -->
+        <div class="glass-panel" style="padding: 2rem;">
+          <h4 style="font-size: 1rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border-color);" data-i18n="profile-pwd-title">Change Password</h4>
+          
+          <div id="password-success" class="alert" style="display: none; padding: 0.75rem 1rem; margin-bottom: 1rem; background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); color: var(--success); border-radius: 8px;" data-i18n="profile-pwd-success">
+            ✓ Password changed successfully!
+          </div>
+          <div id="password-error" style="color: var(--error); font-size: 0.9rem; margin-bottom: 1rem; display: none;"></div>
+
+          <form onsubmit="handleChangePassword(event)">
+            <div class="form-group">
+              <label class="form-label" data-i18n="profile-lbl-curr-pwd">Current Password</label>
+              <input type="password" id="current-password" class="form-input" placeholder="••••••••" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label" data-i18n="profile-lbl-new-pwd">New Password</label>
+              <input type="password" id="new-password" class="form-input" placeholder="At least 6 characters" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label" data-i18n="profile-lbl-confirm-pwd">Confirm New Password</label>
+              <input type="password" id="confirm-password" class="form-input" placeholder="Repeat your new password" required>
+            </div>
+            <button type="submit" class="btn btn-primary" style="padding: 0.5rem 1.5rem; font-size: 0.85rem;" data-i18n="profile-btn-update-pwd">Update Password</button>
+          </form>
+        </div>
+
+        <!-- Plan & Upgrade Card -->
+        <div class="glass-panel" style="padding: 2rem;">
+          <h4 style="font-size: 1rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border-color);" data-i18n="profile-plan-title">Plan & Subscription</h4>
+          
+          <div id="plan-free-info" style="display: none;">
+            <p style="color: var(--text-secondary); margin-bottom: 1.25rem;" data-i18n="profile-free-plan-desc">You are currently on the <strong>Free Plan</strong> — 1 QR code and 100 scans per month.</p>
+            <a href="/dashboard.html" onclick="setTimeout(()=>openUpgradeModal?.(),200)" class="btn btn-primary" style="padding: 0.5rem 1.5rem; font-size: 0.85rem;" data-i18n="profile-btn-upgrade">Upgrade to Pro →</a>
+          </div>
+          <div id="plan-paid-info" style="display: none;">
+            <p style="color: var(--text-secondary); margin-bottom: 1.25rem;" data-i18n="profile-paid-plan-desc">You're on a <strong id="plan-paid-name" style="color: var(--accent-primary);">Pro Plan</strong> with unlimited QR codes and scans.</p>
+            <a href="/dashboard.html" class="btn btn-secondary" style="padding: 0.5rem 1.5rem; font-size: 0.85rem;" data-i18n="profile-btn-back-dash">Back to Dashboard</a>
+          </div>
+        </div>
+
+        <!-- Danger Zone Card -->
+        <div class="glass-panel" style="padding: 2rem; border-color: rgba(239, 68, 68, 0.2); background: rgba(239, 68, 68, 0.02);">
+          <h4 style="font-size: 1rem; color: var(--error); margin-bottom: 0.5rem;" data-i18n="profile-danger-title">Danger Zone</h4>
+          <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 1.25rem;" data-i18n="profile-danger-desc">Permanently delete your account and all associated QR codes and scan data. This cannot be undone.</p>
+          
+          <div id="delete-error" style="color: var(--error); font-size: 0.9rem; margin-bottom: 1rem; display: none;"></div>
+
+          <div id="delete-confirm-box" style="display: none; margin-bottom: 1rem;">
+            <div class="form-group">
+              <label class="form-label" data-i18n="profile-delete-confirm-label">Enter your password to confirm deletion:</label>
+              <input type="password" id="delete-password" class="form-input" placeholder="Your account password">
+            </div>
+            <div style="display: flex; gap: 1rem;">
+              <button onclick="confirmDeleteAccount()" class="btn btn-danger" style="padding: 0.5rem 1.5rem; font-size: 0.85rem;" data-i18n="profile-btn-confirm-delete">Yes, Delete My Account</button>
+              <button onclick="cancelDeleteAccount()" class="btn btn-secondary" style="padding: 0.5rem 1.5rem; font-size: 0.85rem;" data-i18n="profile-btn-cancel">Cancel</button>
+            </div>
+          </div>
+
+          <button id="delete-btn" onclick="showDeleteConfirm()" class="btn btn-danger" style="padding: 0.5rem 1.5rem; font-size: 0.85rem;" data-i18n="profile-btn-delete-account">Delete Account</button>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <script>
+    let currentMerchant = null;
+    let currentLang = 'tr';
+
+    const translations = {
+      en: {
+        "side-dashboard": "Dashboard",
+        "side-profile": "My Profile",
+        "btn-logout": "Log Out",
+        "free-plan": "Free Plan",
+        "profile-title": "My Profile",
+        "profile-desc": "Manage your account details, password, and plan.",
+        "profile-back-dash": "← Back to Dashboard",
+        "profile-card-title": "Account Details",
+        "profile-lbl-name": "Display Name:",
+        "profile-lbl-email": "Email Address:",
+        "profile-lbl-plan": "Active Plan:",
+        "profile-lbl-status": "Subscription Status:",
+        "profile-lbl-joined": "Member Since:",
+        "profile-btn-edit-name": "Edit Display Name",
+        "profile-edit-lbl-name": "Display Name",
+        "btn-save-changes": "Save Changes",
+        "profile-btn-cancel": "Cancel",
+        "profile-pwd-title": "Change Password",
+        "profile-pwd-success": "✓ Password changed successfully!",
+        "profile-lbl-curr-pwd": "Current Password",
+        "profile-lbl-new-pwd": "New Password",
+        "profile-lbl-confirm-pwd": "Confirm New Password",
+        "profile-btn-update-pwd": "Update Password",
+        "profile-plan-title": "Plan & Subscription",
+        "profile-free-plan-desc": "You are currently on the <strong>Free Plan</strong> — 1 QR code and 100 scans per month.",
+        "profile-btn-upgrade": "Upgrade to Pro →",
+        "profile-paid-plan-desc": "You're on a <strong id=\"plan-paid-name\" style=\"color: var(--accent-primary);\">Pro Plan</strong> with unlimited QR codes and scans.",
+        "profile-btn-back-dash": "Back to Dashboard",
+        "profile-danger-title": "Danger Zone",
+        "profile-danger-desc": "Permanently delete your account and all associated QR codes and scan data. This cannot be undone.",
+        "profile-delete-confirm-label": "Enter your password to confirm deletion:",
+        "profile-btn-confirm-delete": "Yes, Delete My Account",
+        "profile-btn-delete-account": "Delete Account"
+      },
+      tr: {
+        "side-dashboard": "Panel",
+        "side-profile": "Profilim",
+        "btn-logout": "Çıkış Yap",
+        "free-plan": "Ücretsiz Paket",
+        "profile-title": "Profilim",
+        "profile-desc": "Hesap bilgilerinizi, şifrenizi ve planınızı yönetin.",
+        "profile-back-dash": "← Panele Geri Dön",
+        "profile-card-title": "Hesap Detayları",
+        "profile-lbl-name": "Görünen İsim:",
+        "profile-lbl-email": "E-posta Adresi:",
+        "profile-lbl-plan": "Aktif Paket:",
+        "profile-lbl-status": "Abonelik Durumu:",
+        "profile-lbl-joined": "Kayıt Tarihi:",
+        "profile-btn-edit-name": "İsmi Düzenle",
+        "profile-edit-lbl-name": "Görünen İsim",
+        "btn-save-changes": "Değişiklikleri Kaydet",
+        "profile-btn-cancel": "İptal",
+        "profile-pwd-title": "Şifreyi Değiştir",
+        "profile-pwd-success": "✓ Şifre başarıyla değiştirildi!",
+        "profile-lbl-curr-pwd": "Mevcut Şifre",
+        "profile-lbl-new-pwd": "Yeni Şifre",
+        "profile-lbl-confirm-pwd": "Yeni Şifreyi Onayla",
+        "profile-btn-update-pwd": "Şifreyi Güncelle",
+        "profile-plan-title": "Plan & Abonelik",
+        "profile-free-plan-desc": "Şu anda <strong>Ücretsiz Paket</strong> kullanıyorsunuz — aylık 1 QR kod ve 100 yönlendirme limitiniz var.",
+        "profile-btn-upgrade": "Pro Plana Yükselt →",
+        "profile-paid-plan-desc": "Sınırsız QR kod ve yönlendirme içeren bir <strong id=\"plan-paid-name\" style=\"color: var(--accent-primary);\">Pro Paket</strong> kullanıyorsunuz.",
+        "profile-btn-back-dash": "Panele Geri Dön",
+        "profile-danger-title": "Tehlikeli Bölge",
+        "profile-danger-desc": "Hesabınızı, oluşturduğunuz tüm QR kodları ve tarama verilerini kalıcı olarak silin. Bu işlem geri alınamaz.",
+        "profile-delete-confirm-label": "Silme işlemini onaylamak için şifrenizi girin:",
+        "profile-btn-confirm-delete": "Evet, Hesabımı Sil",
+        "profile-btn-delete-account": "Hesabı Sil"
+      }
+    };
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const savedLang = localStorage.getItem('qr_lang') || 'tr';
+      currentLang = savedLang;
+      updateLanguageSelectorUI(currentLang);
+
+      const localData = localStorage.getItem('qr_merchant');
+      if (!localData) {
+        window.location.href = '/index.html';
+        return;
+      }
+      currentMerchant = JSON.parse(localData);
+      loadProfile();
+    });
+
+    async function loadProfile() {
+      try {
+        const res = await fetch(`/api/merchants/${currentMerchant.id}`);
+        if (!res.ok) {
+          throw new Error(currentLang === 'tr' ? 'Oturum süresi doldu.' : 'Session expired.');
+        }
+        
+        const merchant = await res.json();
+        currentMerchant = merchant;
+        localStorage.setItem('qr_merchant', JSON.stringify(merchant));
+        renderProfile(merchant);
+      } catch (err) {
+        alert((currentLang === 'tr' ? 'Profil yüklenemedi: ' : 'Failed to load profile: ') + err.message);
+        window.location.href = '/index.html';
+      }
+    }
+
+    function setLanguage(lang) {
+      currentLang = lang;
+      localStorage.setItem('qr_lang', lang);
+      applyLanguage(lang);
+      updateLanguageSelectorUI(lang);
+      
+      // Re-render profile content to update dynamic labels
+      if (currentMerchant) {
+        renderProfile(currentMerchant);
+      }
+    }
+
+    function updateLanguageSelectorUI(lang) {
+      document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
+      const activeBtn = document.getElementById('lang-btn-' + lang);
+      if (activeBtn) activeBtn.classList.add('active');
+    }
+
+    function applyLanguage(lang) {
+      document.title = lang === 'tr' ? 'Profilim - QRAurify' : 'My Profile - QRAurify';
+
+      const elements = document.querySelectorAll('[data-i18n]');
+      elements.forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (translations[lang] && translations[lang][key]) {
+          el.innerHTML = translations[lang][key];
+        }
+      });
+    }
+
+    function renderProfile(merchant) {
+      // Set static translations first
+      applyLanguage(currentLang);
+
+      const displayName = merchant.displayName || merchant.email.split('@')[0];
+      const initials = displayName.substring(0, 1).toUpperCase();
+
+      // Sidebar
+      document.getElementById('user-avatar').innerText = initials;
+      document.getElementById('user-display-name').innerText = displayName;
+      document.getElementById('user-email').innerText = merchant.email;
+      
+      const tierEl = document.getElementById('user-tier');
+      if (merchant.plan === 'agency') {
+        tierEl.innerText = currentLang === 'tr' ? 'Ajans Planı' : 'Agency Plan';
+        tierEl.style.color = 'var(--accent-secondary)';
+      } else if (merchant.plan === 'pro') {
+        tierEl.innerText = currentLang === 'tr' ? 'Pro Planı' : 'Pro Plan';
+        tierEl.style.color = 'var(--accent-primary)';
+      } else {
+        tierEl.innerText = currentLang === 'tr' ? 'Ücretsiz Plan' : 'Free Plan';
+        tierEl.style.color = 'var(--text-secondary)';
+      }
+
+      // Header avatar
+      document.getElementById('profile-avatar-large').innerText = initials;
+      document.getElementById('profile-display-name-header').innerText = displayName;
+      document.getElementById('profile-email-header').innerText = merchant.email;
+
+      const planBadge = document.getElementById('profile-plan-badge');
+      if (merchant.plan === 'agency') {
+        planBadge.innerText = currentLang === 'tr' ? 'Ajans Planı' : 'Agency Plan';
+        planBadge.style.background = 'rgba(16,185,129,0.15)';
+        planBadge.style.color = 'var(--accent-secondary)';
+        planBadge.style.borderColor = 'rgba(16,185,129,0.3)';
+      } else if (merchant.plan === 'pro') {
+        planBadge.innerText = currentLang === 'tr' ? 'Pro Planı' : 'Pro Plan';
+        planBadge.style.background = 'rgba(139,92,246,0.15)';
+        planBadge.style.color = 'var(--accent-primary)';
+        planBadge.style.borderColor = 'rgba(139,92,246,0.3)';
+      } else {
+        planBadge.innerText = currentLang === 'tr' ? 'Ücretsiz Plan' : 'Free Plan';
+        planBadge.style.background = 'rgba(255,255,255,0.05)';
+        planBadge.style.color = 'var(--text-secondary)';
+        planBadge.style.borderColor = 'var(--border-color)';
+      }
+
+      // Details
+      document.getElementById('detail-display-name').innerText = displayName;
+      document.getElementById('detail-email').innerText = merchant.email;
+      
+      let planText = '';
+      if (merchant.plan === 'agency') {
+        planText = currentLang === 'tr' ? 'Ajans Planı' : 'Agency Plan';
+      } else if (merchant.plan === 'pro') {
+        planText = currentLang === 'tr' ? 'Pro Planı' : 'Pro Plan';
+      } else {
+        planText = currentLang === 'tr' ? 'Ücretsiz Plan' : 'Free Plan';
+      }
+      document.getElementById('detail-plan').innerText = planText;
+      
+      const statusEl = document.getElementById('detail-status');
+      const isUnpaid = merchant.subscriptionStatus === 'unpaid';
+      if (isUnpaid) {
+        statusEl.innerText = currentLang === 'tr' ? 'Ödenmemiş / Gecikmiş' : 'Unpaid / Past Due';
+        statusEl.style.color = 'var(--error)';
+      } else {
+        statusEl.innerText = currentLang === 'tr' ? 'Aktif' : 'Active';
+        statusEl.style.color = 'var(--success)';
+      }
+
+      const joinDate = merchant.createdAt ? new Date(merchant.createdAt).toLocaleDateString(currentLang === 'tr' ? 'tr-TR' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : '—';
+      document.getElementById('detail-joined').innerText = joinDate;
+
+      // Plan card
+      const isPaid = merchant.plan === 'pro' || merchant.plan === 'agency';
+      document.getElementById('plan-free-info').style.display = isPaid ? 'none' : 'block';
+      document.getElementById('plan-paid-info').style.display = isPaid ? 'block' : 'none';
+      if (isPaid) {
+        const planName = merchant.plan === 'agency' 
+          ? (currentLang === 'tr' ? 'Ajans Planı' : 'Agency Plan') 
+          : (currentLang === 'tr' ? 'Pro Planı' : 'Pro Plan');
+        document.getElementById('plan-paid-name').innerText = planName;
+      }
+
+      // Dynamic placeholder updates
+      document.getElementById('edit-display-name').placeholder = currentLang === 'tr' ? 'Adınız veya işletme adınız' : 'Your name or business name';
+      document.getElementById('new-password').placeholder = currentLang === 'tr' ? 'En az 6 karakter' : 'At least 6 characters';
+      document.getElementById('confirm-password').placeholder = currentLang === 'tr' ? 'Yeni şifrenizi tekrar girin' : 'Repeat your new password';
+      document.getElementById('delete-password').placeholder = currentLang === 'tr' ? 'Hesap şifreniz' : 'Your account password';
+    }
+
+    function showEditProfile() {
+      document.getElementById('profile-info-display').style.display = 'none';
+      const form = document.getElementById('profile-edit-form');
+      form.style.display = 'block';
+      document.getElementById('edit-display-name').value = currentMerchant.displayName || '';
+    }
+
+    function cancelEditProfile() {
+      document.getElementById('profile-edit-form').style.display = 'none';
+      document.getElementById('profile-info-display').style.display = 'block';
+    }
+
+    async function handleSaveProfile(event) {
+      event.preventDefault();
+      const errDiv = document.getElementById('profile-edit-error');
+      errDiv.style.display = 'none';
+      
+      const displayName = document.getElementById('edit-display-name').value.trim();
+      
+      try {
+        const res = await fetch(`/api/merchants/${currentMerchant.id}/profile`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ displayName })
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || (currentLang === 'tr' ? 'Profil kaydedilemedi.' : 'Failed to save profile.'));
+
+        currentMerchant = { ...currentMerchant, displayName };
+        localStorage.setItem('qr_merchant', JSON.stringify(currentMerchant));
+        
+        cancelEditProfile();
+        renderProfile(currentMerchant);
+        alert(currentLang === 'tr' ? 'Profil başarıyla güncellendi!' : 'Profile updated successfully!');
+      } catch (err) {
+        errDiv.innerText = err.message;
+        errDiv.style.display = 'block';
+      }
+    }
+
+    async function handleChangePassword(event) {
+      event.preventDefault();
+      const errDiv = document.getElementById('password-error');
+      const successDiv = document.getElementById('password-success');
+      errDiv.style.display = 'none';
+      successDiv.style.display = 'none';
+
+      const currentPassword = document.getElementById('current-password').value;
+      const newPassword = document.getElementById('new-password').value;
+      const confirmPassword = document.getElementById('confirm-password').value;
+
+      if (newPassword !== confirmPassword) {
+        errDiv.innerText = currentLang === 'tr' ? 'Yeni şifreler eşleşmiyor.' : 'New passwords do not match.';
+        errDiv.style.display = 'block';
+        return;
+      }
+
+      if (newPassword.length < 6) {
+        errDiv.innerText = currentLang === 'tr' ? 'Yeni şifre en az 6 karakter olmalıdır.' : 'New password must be at least 6 characters.';
+        errDiv.style.display = 'block';
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/merchants/${currentMerchant.id}/change-password`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ currentPassword, newPassword })
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || (currentLang === 'tr' ? 'Şifre değiştirilemedi.' : 'Failed to change password.'));
+
+        // Clear form
+        document.getElementById('current-password').value = '';
+        document.getElementById('new-password').value = '';
+        document.getElementById('confirm-password').value = '';
+        successDiv.style.display = 'block';
+        setTimeout(() => successDiv.style.display = 'none', 5000);
+      } catch (err) {
+        errDiv.innerText = err.message;
+        errDiv.style.display = 'block';
+      }
+    }
+
+    function showDeleteConfirm() {
+      document.getElementById('delete-btn').style.display = 'none';
+      document.getElementById('delete-confirm-box').style.display = 'block';
+    }
+
+    function cancelDeleteAccount() {
+      document.getElementById('delete-btn').style.display = 'block';
+      document.getElementById('delete-confirm-box').style.display = 'none';
+      document.getElementById('delete-password').value = '';
+      document.getElementById('delete-error').style.display = 'none';
+    }
+
+    async function confirmDeleteAccount() {
+      const password = document.getElementById('delete-password').value;
+      const errDiv = document.getElementById('delete-error');
+      errDiv.style.display = 'none';
+
+      if (!password) {
+        errDiv.innerText = currentLang === 'tr' ? 'Lütfen onaylamak için şifrenizi girin.' : 'Please enter your password to confirm.';
+        errDiv.style.display = 'block';
+        return;
+      }
+
+      const confirmText = currentLang === 'tr' 
+        ? '⚠️ Bu işlem hesabınızı ve tüm QR kodlarınızı kalıcı olarak silecektir. Bu işlem geri alınamaz!\n\nDevam etmek istediğinize kesinlikle emin misiniz?'
+        : '⚠️ This will permanently delete your account and all QR codes. This cannot be undone!\n\nAre you absolutely sure?';
+
+      if (!confirm(confirmText)) {
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/merchants/${currentMerchant.id}`, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password })
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || (currentLang === 'tr' ? 'Hesap silinemedi.' : 'Failed to delete account.'));
+
+        localStorage.removeItem('qr_merchant');
+        alert(currentLang === 'tr' ? 'Hesabınız kalıcı olarak silinmiştir.' : 'Your account has been permanently deleted.');
+        window.location.href = '/index.html';
+      } catch (err) {
+        errDiv.innerText = err.message;
+        errDiv.style.display = 'block';
+      }
+    }
+
+    function handleLogout() {
+      localStorage.removeItem('qr_merchant');
+      window.location.href = '/index.html';
+    }
+  </script>
+</body>
+</html>

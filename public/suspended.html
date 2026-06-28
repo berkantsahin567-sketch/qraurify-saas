@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QR Code Suspended - QRAurify</title>
+  <link rel="stylesheet" href="/app.css">
+</head>
+<body>
+
+  <div class="container" style="max-width: 600px; margin: 8rem auto; text-align: center;">
+    <div class="glass-panel" style="padding: 4rem 3rem;">
+      <div class="feature-icon" style="margin: 0 auto 2rem auto; width: 64px; height: 64px; background: rgba(239, 68, 68, 0.1);">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 32px; height: 32px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+      </div>
+      
+      <h1 id="susp-title" style="font-size: 2.2rem; margin-bottom: 1rem; color: #ef4444;" data-i18n="title">QR Code Suspended</h1>
+      <p id="susp-desc" style="color: var(--text-secondary); margin-bottom: 2.5rem; font-size: 1.05rem;" data-i18n="desc">
+        This dynamic QR code redirect has been temporarily paused.
+      </p>
+
+      <div style="background: rgba(255,255,255,0.02); padding: 1.5rem; border-radius: 8px; border: 1px solid var(--border-color); text-align: left; margin-bottom: 2rem;">
+        <strong id="owner-title" style="color: #fff; display: block; margin-bottom: 0.5rem;" data-i18n="owner-title">Are you the owner of this QR code?</strong>
+        <span id="owner-desc" style="font-size: 0.9rem; color: var(--text-secondary);" data-i18n="owner-desc">Log in to your QRAurify dashboard to reactivate all your dynamic QR codes instantly.</span>
+      </div>
+
+      <a href="/index.html" class="btn btn-primary" style="width: 100%;" id="btn-reactivate" data-i18n="btn-reactivate">Reactivate via Dashboard</a>
+    </div>
+  </div>
+
+  <script>
+    const translations = {
+      en: {
+        title: "QR Code Suspended",
+        descQuota: "This dynamic QR code redirect has been temporarily paused because the merchant's free tier scan quota (100 scans/month) has been reached.",
+        descSub: "This dynamic QR code redirect has been temporarily suspended because the subscription payment failed or expired.",
+        "owner-title": "Are you the owner of this QR code?",
+        "owner-desc": "Log in to your QRAurify dashboard and upgrade/reactivate your Pro or Agency plan to restore all your dynamic QR codes instantly.",
+        "btn-reactivate": "Reactivate via Dashboard"
+      },
+      tr: {
+        title: "QR Kod Askıya Alındı",
+        descQuota: "Bu dinamik QR kod yönlendirmesi, üyenin ücretsiz paketteki aylık tarama limitine (100 tarama) ulaştığı için geçici olarak duraklatılmıştır.",
+        descSub: "Bu dinamik QR kod yönlendirmesi, abonelik ödemesi alınamadığı veya üyelik süresi dolduğu için geçici olarak askıya alınmıştır.",
+        "owner-title": "Bu QR kodunun sahibi siz misiniz?",
+        "owner-desc": "QRAurify paneline giriş yapın ve Pro veya Ajans planınızı yükselterek/etkinleştirerek tüm dinamik QR kodlarınızı anında tekrar aktifleştirin.",
+        "btn-reactivate": "Panel Üzerinden Aktifleştir"
+      }
+    };
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const activeLang = localStorage.getItem('qr_lang') || 'tr';
+      const dict = translations[activeLang];
+      if (dict) {
+        const urlParams = new URLSearchParams(window.location.search);
+        const reason = urlParams.get('reason') || 'quota';
+
+        document.getElementById('susp-title').innerText = dict.title;
+        document.getElementById('susp-desc').innerText = reason === 'subscription' ? dict.descSub : dict.descQuota;
+        document.getElementById('owner-title').innerText = dict["owner-title"];
+        document.getElementById('owner-desc').innerText = dict["owner-desc"];
+        document.getElementById('btn-reactivate').innerText = dict["btn-reactivate"];
+      }
+    });
+  </script>
+</body>
+</html>

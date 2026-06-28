@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QRAurify - Dynamic QR Codes & Redirect Manager SaaS</title>
+  <meta name="description" content="Print your QR codes once, change the target URL instantly at any time. Monitor scan counts and referrers using a lightweight, set-and-forget portal.">
+  <link rel="stylesheet" href="/app.css">
+  
+  <!-- Client-side QR Code Generation Library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+<body>
+
+  <!-- Navigation Bar -->
+  <header>
+    <div class="container nav-container">
+      <a href="/" class="logo">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+          <rect x="7" y="7" width="3" height="3"></rect>
+          <rect x="14" y="7" width="3" height="3"></rect>
+          <rect x="7" y="14" width="3" height="3"></rect>
+          <line x1="14" y1="14" x2="14" y2="14.01"></line>
+          <line x1="17" y1="14" x2="17" y2="14.01"></line>
+          <line x1="14" y1="17" x2="14" y2="17.01"></line>
+          <line x1="17" y1="17" x2="17" y2="17.01"></line>
+        </svg>
+        <span>QRAurify</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="#playground" data-i18n="nav-try">Try Live</a></li>
+        <li><a href="#features" data-i18n="nav-features">Features</a></li>
+        <li><a href="#pricing" data-i18n="nav-pricing">Pricing</a></li>
+        <li><a href="#faq" data-i18n="nav-faq">FAQ</a></li>
+      </ul>
+      <div style="display: flex; align-items: center; gap: 1rem;">
+        <div class="lang-switcher">
+          <button onclick="setLanguage('tr')" id="lang-btn-tr" class="lang-btn">TR</button>
+          <span style="color: var(--border-color); font-size: 0.85rem;">|</span>
+          <button onclick="setLanguage('en')" id="lang-btn-en" class="lang-btn">EN</button>
+        </div>
+        <div id="nav-auth-btn">
+          <button onclick="openModal('login-modal')" class="btn btn-secondary" data-i18n="nav-login">Merchant Login</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="hero container">
+    <div class="hero-badge">
+      <span>⚡</span> <span data-i18n="hero-badge">Save Stripe Invoicing Fees</span>
+    </div>
+    <h1 id="hero-title">Change the Redirect Link<br><span style="background: var(--accent-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Keep the Printed QR Code</span></h1>
+    <p id="hero-desc" data-i18n="hero-desc">Perfect for restaurant menus, real estate flyers, and business cards. Never waste money re-printing physical materials just because a link changed.</p>
+    <div class="hero-actions">
+      <button onclick="openModal('register-modal')" class="btn btn-primary" data-i18n="btn-start">Start For Free</button>
+      <a href="#playground" class="btn btn-secondary" data-i18n="btn-try">Try Generator</a>
+    </div>
+  </section>
+
+  <!-- Interactive QR Code Generator Playground -->
+  <section id="playground" class="playground-section container">
+    <div class="glass-panel playground-wrapper">
+      <div class="playground-inputs">
+        <h2 style="font-size: 2rem; margin-bottom: 0.5rem;" data-i18n="play-title">Test a Dynamic QR Live</h2>
+        <p style="color: var(--text-secondary); margin-bottom: 2rem;" data-i18n="play-desc">Type a URL below and select a custom color to see it render in real-time.</p>
+        
+        <div class="form-group">
+          <label class="form-label" data-i18n="label-url">Destination URL</label>
+          <input type="url" id="play-url" class="form-input" value="https://google.com" oninput="regeneratePlaygroundQr()" placeholder="https://example.com/menu.pdf">
+        </div>
+        <div class="form-group">
+          <label class="form-label" data-i18n="label-color">QR Accent Color</label>
+          <div class="color-picker-wrapper">
+            <input type="color" id="play-color" class="color-preview" value="#8b5cf6" onchange="regeneratePlaygroundQr()">
+            <span id="play-color-text" style="font-family: monospace; font-size: 0.9rem;">#8B5CF6</span>
+          </div>
+        </div>
+        <button onclick="downloadPlaygroundQr()" class="btn btn-primary" style="margin-top: 1rem; width: 100%;" data-i18n="btn-download-qr">Download QR Image</button>
+      </div>
+      
+      <!-- Visual preview canvas container -->
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 1rem;">
+        <div id="play-qr-box" class="playground-preview-box">
+          <!-- Rendered QR code canvas appended here by qrcodejs -->
+        </div>
+        <span style="color: var(--text-muted); font-size: 0.8rem;" data-i18n="play-scan-tip">Scan this QR with your phone to test</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section id="features" class="features-section container">
+    <div class="section-header">
+      <h2 data-i18n="features-title">Why Dynamic QR Codes?</h2>
+      <p data-i18n="features-desc">Traditional QR codes embed the target link directly, making them break if the link dies. QRAurify points to a redirects manager you can change in 1 second.</p>
+    </div>
+    
+    <div class="features-grid">
+      <div class="glass-panel feature-card">
+        <div class="feature-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
+          </svg>
+        </div>
+        <h3 data-i18n="f1-title">Save Printing Costs</h3>
+        <p data-i18n="f1-desc">Keep your packaging, menus, and brochures intact. Change files or destination links instantly without ordering new prints.</p>
+      </div>
+
+      <div class="glass-panel feature-card">
+        <div class="feature-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="20" x2="18" y2="10"></line>
+            <line x1="12" y1="20" x2="12" y2="4"></line>
+            <line x1="6" y1="20" x2="6" y2="14"></line>
+          </svg>
+        </div>
+        <h3 data-i18n="f2-title">Real-time Analytics</h3>
+        <p data-i18n="f2-desc">Track every scan. See which devices (Mobile vs. Desktop) and what platforms (Google, Social) refer users to your pages.</p>
+      </div>
+
+      <div class="glass-panel feature-card">
+        <div class="feature-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+          </svg>
+        </div>
+        <h3 data-i18n="f3-title">Permanent Redirect Resilience</h3>
+        <p data-i18n="f3-desc">If you build a new website, your old QR codes won't break. Just log in, replace the destination URL, and enjoy uninterrupted service.</p>
+      </div>
+
+      <div class="glass-panel feature-card">
+        <div class="feature-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
+          </svg>
+        </div>
+        <h3 data-i18n="f4-title">Time-Based Smart Menus</h3>
+        <p data-i18n="f4-desc">Serve different menus or campaigns automatically at different times of the day (e.g. morning breakfast vs. evening dinner) with the same QR code.</p>
+      </div>
+
+      <div class="glass-panel feature-card">
+        <div class="feature-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+          </svg>
+        </div>
+        <h3 data-i18n="f5-title">Custom QR Styling & Logos</h3>
+        <p data-i18n="f5-desc">Customize colors to fit your brand identity. Upload your company logo to place in the center of the QR pattern for a premium look.</p>
+      </div>
+
+      <div class="glass-panel feature-card">
+        <div class="feature-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="7" height="7"></rect>
+            <rect x="14" y="3" width="7" height="7"></rect>
+            <rect x="14" y="14" width="7" height="7"></rect>
+            <rect x="3" y="14" width="7" height="7"></rect>
+          </svg>
+        </div>
+        <h3 data-i18n="f6-title">White-Label & Bulk Import</h3>
+        <p data-i18n="f6-desc">Generate codes in bulk by pasting CSV lists. Redirect through your own custom domains (e.g. qr.mybrand.com) for a 100% white-label feel.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pricing Cards Section -->
+  <section id="pricing" class="pricing-section container">
+    <div class="section-header">
+      <h2 data-i18n="pricing-title">Flexible Plans for Businesses</h2>
+      <p data-i18n="pricing-desc">Start with our Free tier to test redirections, then upgrade to Pro or Agency for unlimited links.</p>
+    </div>
+    
+    <div class="pricing-grid">
+      <!-- Card 1: Free -->
+      <div class="glass-panel pricing-card">
+        <h3 data-i18n="p1-name">Free Tier</h3>
+        <p style="color: var(--text-secondary);" data-i18n="p1-desc">For single locations</p>
+        <div class="pricing-price">0 TL <span data-i18n="p-month">/ month</span></div>
+        <ul class="pricing-features">
+          <li data-i18n="p1-f1">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            1 Active Dynamic QR Code
+          </li>
+          <li data-i18n="p1-f2">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            Up to 100 Scans / month
+          </li>
+          <li data-i18n="p1-f3">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            Standard styling
+          </li>
+        </ul>
+        <button onclick="openModal('register-modal')" class="btn btn-secondary" data-i18n="btn-get-started">Get Started</button>
+      </div>
+
+      <!-- Card 2: Pro -->
+      <div class="glass-panel pricing-card premium">
+        <div class="pricing-badge" data-i18n="p2-badge">RECOMMENDED</div>
+        <h3 data-i18n="p2-name">Pro Plan</h3>
+        <p style="color: var(--text-secondary);" data-i18n="p2-desc">For growing businesses & brands</p>
+        <div class="pricing-price">500 TL <span data-i18n="p-month">/ month</span></div>
+        <ul class="pricing-features">
+          <li data-i18n="p2-f1">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            <strong>Unlimited</strong> Dynamic QR Codes
+          </li>
+          <li data-i18n="p2-f2">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            <strong>Unlimited</strong> Scans / month
+          </li>
+          <li data-i18n="p2-f3">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            Custom Brand Colors & Logo center overlays
+          </li>
+          <li data-i18n="p2-f4">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            Time-based smart redirects
+          </li>
+          <li data-i18n="p2-f5">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            Google Analytics & Facebook Pixel tracking
+          </li>
+          <li data-i18n="p2-f6">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            vCard Plus digital contact profile cards
+          </li>
+          <li data-i18n="p2-f7">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            Password protection & redirect locking
+          </li>
+          <li data-i18n="p2-f8">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            Expiration rules & fallback URLs
+          </li>
+        </ul>
+        <button onclick="openModal('register-modal')" class="btn btn-primary" data-i18n="btn-subscribe">Subscribe Now</button>
+      </div>
+
+      <!-- Card 3: Agency -->
+      <div class="glass-panel pricing-card">
+        <h3 data-i18n="p3-name">Agency Plan</h3>
+        <p style="color: var(--text-secondary);" data-i18n="p3-desc">For agencies & developers</p>
+        <div class="pricing-price">1000 TL <span data-i18n="p-month">/ month</span></div>
+        <ul class="pricing-features">
+          <li data-i18n="p3-f1">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            <strong>Everything in Pro</strong> included
+          </li>
+          <li data-i18n="p3-f2">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            <strong>Bulk</strong> creation (CSV Upload)
+          </li>
+          <li data-i18n="p3-f3">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            <strong>Custom domains</strong> redirects (white-label)
+          </li>
+          <li data-i18n="p3-f4">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            Device OS-based smart routing (iOS/Android)
+          </li>
+          <li data-i18n="p3-f5">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            Priority technical support
+          </li>
+        </ul>
+        <button onclick="openModal('register-modal')" class="btn btn-secondary" data-i18n="btn-subscribe">Subscribe Now</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ Accordions Section -->
+  <section id="faq" class="faq-section container">
+    <div class="section-header">
+      <h2 data-i18n="faq-title">Frequently Asked Questions</h2>
+    </div>
+    
+    <div class="faq-wrapper">
+      <div class="glass-panel faq-item" onclick="toggleFaq(this)">
+        <div class="faq-question">
+          <span data-i18n="q1">What happens if I reach the 100 scans limit on Free plan?</span>
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </div>
+        <div class="faq-answer" data-i18n="a1">
+          If your printed codes exceed 100 scans, they will temporarily display a warning page notifying users that the scan quota has been reached. You can unlock unlimited redirects instantly by upgrading to Pro for $12/month.
+        </div>
+      </div>
+
+      <div class="glass-panel faq-item" onclick="toggleFaq(this)">
+        <div class="faq-question">
+          <span data-i18n="q2">Can I customize the shape and logo in the QR code?</span>
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </div>
+        <div class="faq-answer" data-i18n="a2">
+          Yes! With the Pro plan, you can change the foreground color of the QR code block and upload your business logo to overlay right in the center of the QR pattern.
+        </div>
+      </div>
+
+      <div class="glass-panel faq-item" onclick="toggleFaq(this)">
+        <div class="faq-question">
+          <span data-i18n="q3">Can I use my own custom domains?</span>
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </div>
+        <div class="faq-answer" data-i18n="a3">
+          Yes. While our default short link starts with qraurify.co/r/, Pro subscribers can request custom domain redirects to match their exact brand address.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container">
+      <p data-i18n="footer">&copy; 2026 QRAurify Inc. Dynamic QR code link management. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <!-- Login Modal -->
+  <div id="login-modal" class="modal-overlay">
+    <div class="glass-panel modal-content">
+      <button class="modal-close" onclick="closeModal('login-modal')">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
+      <h3 style="font-size: 1.8rem; margin-bottom: 0.5rem; text-align: center;" data-i18n="m-login-title">Welcome Back</h3>
+      <p style="color: var(--text-secondary); text-align: center; margin-bottom: 2rem;" data-i18n="m-login-desc">Log in to manage your active redirect URLs</p>
+      
+      <div id="login-error" style="color: var(--error); font-size: 0.9rem; margin-bottom: 1rem; text-align: center; display: none;"></div>
+
+      <form onsubmit="handleAuth(event, '/api/auth/login', 'login-error')">
+        <div class="form-group">
+          <label class="form-label" data-i18n="label-email">Email Address</label>
+          <input type="email" id="login-email" class="form-input" placeholder="you@company.com" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" data-i18n="label-pass">Password</label>
+          <input type="password" id="login-pass" class="form-input" placeholder="••••••••" required>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;" data-i18n="btn-login">Login</button>
+      </form>
+      <p style="text-align: center; font-size: 0.85rem; color: var(--text-secondary); margin-top: 1.5rem;" id="login-switch-text">
+        New merchant? <a href="#" onclick="switchModal('login-modal', 'register-modal')" style="color: var(--accent-primary); font-weight: 600;">Create account</a>
+      </p>
+    </div>
+  </div>
+
+  <!-- Register Modal -->
+  <div id="register-modal" class="modal-overlay">
+    <div class="glass-panel modal-content">
+      <button class="modal-close" onclick="closeModal('register-modal')">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
+      <h3 style="font-size: 1.8rem; margin-bottom: 0.5rem; text-align: center;" data-i18n="m-reg-title">Register Account</h3>
+      <p style="color: var(--text-secondary); text-align: center; margin-bottom: 2rem;" data-i18n="m-reg-desc">Print once, update destination targets instantly</p>
+
+      <div id="register-error" style="color: var(--error); font-size: 0.9rem; margin-bottom: 1rem; text-align: center; display: none;"></div>
+
+      <form onsubmit="handleAuth(event, '/api/auth/register', 'register-error')">
+        <div class="form-group">
+          <label class="form-label" data-i18n="label-email">Email Address</label>
+          <input type="email" id="register-email" class="form-input" placeholder="you@company.com" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" data-i18n="label-pass">Password</label>
+          <input type="password" id="register-pass" class="form-input" placeholder="At least 6 characters" minlength="6" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" data-i18n="label-pass-confirm">Confirm Password</label>
+          <input type="password" id="register-pass-confirm" class="form-input" placeholder="Repeat your password" minlength="6" required>
+        </div>
+        <div id="register-pass-error" style="color: var(--error); font-size: 0.85rem; display: none; margin-bottom: 0.5rem;"></div>
+        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;" data-i18n="btn-create-acc">Create Account</button>
+      </form>
+      <p style="text-align: center; font-size: 0.85rem; color: var(--text-secondary); margin-top: 1.5rem;" id="reg-switch-text">
+        Already registered? <a href="#" onclick="switchModal('register-modal', 'login-modal')" style="color: var(--accent-primary); font-weight: 600;">Log in</a>
+      </p>
+    </div>
+  </div>
+
+  <script>
+    let playgroundQr = null;
+
+    // Translation Dictionaries
+    const translations = {
+      en: {
+        "nav-try": "Try Live",
+        "nav-features": "Features",
+        "nav-pricing": "Pricing",
+        "nav-faq": "FAQ",
+        "nav-login": "Merchant Login",
+        "hero-badge": "Save Reprints Cost",
+        "hero-desc": "Perfect for restaurant menus, real estate flyers, and business cards. Never waste money re-printing physical materials just because a link changed.",
+        "btn-start": "Start For Free",
+        "btn-try": "Try Generator",
+        "play-title": "Test a Dynamic QR Live",
+        "play-desc": "Type a URL below and select a custom color to see it render in real-time.",
+        "label-url": "Destination URL",
+        "label-color": "QR Accent Color",
+        "btn-download-qr": "Download QR Image",
+        "play-scan-tip": "Scan this QR with your phone to test",
+        "features-title": "Why Dynamic QR Codes?",
+        "features-desc": "Traditional QR codes embed the target link directly, making them break if the link dies. QRAurify points to a redirects manager you can change in 1 second.",
+        "f1-title": "Save Printing Costs",
+        "f1-desc": "Keep your packaging, menus, and brochures intact. Change files or destination links instantly without ordering new prints.",
+        "f2-title": "Real-time Analytics",
+        "f2-desc": "Track every scan. See which devices (Mobile vs. Desktop) and what platforms (Google, Social) refer users to your pages.",
+        "f3-title": "Permanent Redirect Resilience",
+        "f3-desc": "If you build a new website, your old QR codes won't break. Just log in, replace the destination URL, and enjoy uninterrupted service.",
+        "f4-title": "Time-Based Smart Menus",
+        "f4-desc": "Serve different menus or campaigns automatically at different times of the day (e.g. morning breakfast vs. evening dinner) with the same QR code.",
+        "f5-title": "Custom QR Styling & Logos",
+        "f5-desc": "Customize colors to fit your brand identity. Upload your company logo to place in the center of the QR pattern for a premium look.",
+        "f6-title": "White-Label & Bulk Import",
+        "f6-desc": "Generate codes in bulk by pasting CSV lists. Redirect through your own custom domains (e.g. qr.mybrand.com) for a 100% white-label feel.",
+        "pricing-title": "Flexible Plans for Businesses",
+        "pricing-desc": "Start with our Free tier to test redirections, then upgrade to Pro or Agency for unlimited links.",
+        "p1-name": "Free Tier",
+        "p1-desc": "For single locations",
+        "p-month": "/ month",
+        "p1-f1": "1 Active Dynamic QR Code",
+        "p1-f2": "Up to 100 Scans / month",
+        "p1-f3": "Standard styling",
+        "btn-get-started": "Get Started",
+        "p2-badge": "RECOMMENDED",
+        "p2-name": "Pro Plan",
+        "p2-desc": "For growing businesses & brands",
+        "p2-f1": "Unlimited Dynamic QR Codes",
+        "p2-f2": "Unlimited Scans / month",
+        "p2-f3": "Custom Brand Colors & Logo center overlays",
+        "p2-f4": "Time-based smart redirects",
+        "p2-f5": "Google Analytics & Facebook Pixel tracking",
+        "p2-f6": "vCard Plus digital contact profile cards",
+        "p2-f7": "Password protection & redirect locking",
+        "p2-f8": "Expiration rules & fallback URLs",
+        "btn-subscribe": "Subscribe Now",
+        "p3-name": "Agency Plan",
+        "p3-desc": "For agencies & developers",
+        "p3-f1": "Everything in Pro included",
+        "p3-f2": "Bulk creation (CSV Upload)",
+        "p3-f3": "Custom domains redirects (white-label)",
+        "p3-f4": "Device OS-based smart routing (iOS/Android)",
+        "p3-f5": "Priority technical support",
+        "faq-title": "Frequently Asked Questions",
+        "q1": "What happens if I reach the 100 scans limit on Free plan?",
+        "a1": "If your printed codes exceed 100 scans, they will temporarily display a warning page notifying users that the scan quota has been reached. You can unlock unlimited redirects instantly by upgrading to Pro for 500 TL/month.",
+        "q2": "Can I customize the shape and logo in the QR code?",
+        "a2": "Yes! With the Pro plan, you can change the foreground color of the QR code block and upload your business logo to overlay right in the center of the QR pattern.",
+        "q3": "Can I use my own custom domains?",
+        "a3": "Yes. While our default short link starts with qraurify.co/r/, Pro subscribers can request custom domain redirects to match their exact brand address.",
+        "footer": "© 2026 QRAurify Inc. Dynamic QR code link management. All rights reserved.",
+        "m-login-title": "Welcome Back",
+        "m-login-desc": "Log in to manage your active redirect URLs",
+        "label-email": "Email Address",
+        "label-pass": "Password",
+        "btn-login": "Login",
+        "m-reg-title": "Register Account",
+        "m-reg-desc": "Print once, update destination targets instantly",
+        "btn-create-acc": "Create Account",
+        "label-pass-confirm": "Confirm Password"
+      },
+      tr: {
+        "nav-try": "Canlı Dene",
+        "nav-features": "Özellikler",
+        "nav-pricing": "Fiyatlandırma",
+        "nav-faq": "SSS",
+        "nav-login": "Kullanıcı Girişi",
+        "hero-badge": "Baskı ve Yenileme Masraflarından Kurtulun",
+        "hero-desc": "Restoran menüleri, broşürler ve kartvizitler için mükemmel çözüm. Sırf bir link değişti diye fiziksel baskı malzemelerinizi asla çöpe atmayın.",
+        "btn-start": "Ücretsiz Başla",
+        "btn-try": "Modülü Dene",
+        "play-title": "QR Kodunu Canlı Dene",
+        "play-desc": "Aşağıya bir URL yazın ve rengini seçerek gerçek zamanlı oluşmasını izleyin.",
+        "label-url": "Hedef Yönlendirme URL'i",
+        "label-color": "QR Kod Rengi",
+        "btn-download-qr": "QR Kod Resmini İndir",
+        "play-scan-tip": "Test etmek için telefonunuzun kamerasıyla taratın",
+        "features-title": "Neden Dinamik QR Kod?",
+        "features-desc": "Klasik QR kodlar hedef linki doğrudan içine gömer ve link bozulursa çalışmaz. QRAurify ise 1 saniyede değiştirebileceğiniz akıllı bir yönlendirme paneli sunar.",
+        "f1-title": "Baskı Masrafından Tasarruf Edin",
+        "f1-desc": "Paketlerinizi, menülerinizi ve broşürlerinizi koruyun. Yeni baskı siparişi vermeden hedef linklerinizi anında değiştirin.",
+        "f2-title": "Gerçek Zamanlı Analiz",
+        "f2-desc": "Her taramayı takip edin. Ziyaretçilerin hangi cihazlardan (Mobil/Masaüstü) ve platformlardan (Sosyal Medya, Google) ulaştığını görün.",
+        "f3-title": "Kalıcı Bağlantı Esnekliği",
+        "f3-desc": "Web sitenizi yenileseniz bile eski QR kodlarınız bozulmaz. Giriş yapıp yeni linki tanımlayın ve kesintisiz hizmetin keyfini çıkarın.",
+        "f4-title": "Zaman Ayarlı Akıllı Menüler",
+        "f4-desc": "Günün farklı saatlerinde (örn. sabah kahvaltısı vs. akşam yemeği) aynı QR kod üzerinden farklı menü veya kampanyaları otomatik olarak sunun.",
+        "f5-title": "Özel QR Tasarımı & Logolar",
+        "f5-desc": "Renkleri marka kimliğinize göre özelleştirin. Premium bir görünüm için QR deseninin tam ortasına şirket logonuzu yerleştirin.",
+        "f6-title": "Beyaz Etiket & Toplu İçe Aktarım",
+        "f6-desc": "CSV listeleri yapıştırarak toplu olarak kodlar üretin. %100 kendi markanız gibi hissettirmek için kendi özel alan adlarınız (örn. qr.markam.com) üzerinden yönlendirin.",
+        "pricing-title": "İşletmeler için Esnek Planlar",
+        "pricing-desc": "Yönlendirmeleri test etmek için Ücretsiz paketle başlayın, sınırsız kodlar için Pro veya Ajans paketine geçin.",
+        "p1-name": "Ücretsiz Paket",
+        "p1-desc": "Tekil konumlar için",
+        "p-month": "/ ay",
+        "p1-f1": "1 Aktif Dinamik QR Kod",
+        "p1-f2": "Aylık 100 Taramaya kadar",
+        "p1-f3": "Standart QR tasarımı",
+        "btn-get-started": "Başlangıç Yap",
+        "p2-badge": "ÖNERİLEN",
+        "p2-name": "Pro Paket",
+        "p2-desc": "Büyüyen işletmeler ve markalar için",
+        "p2-f1": "Sınırsız Dinamik QR Kod",
+        "p2-f2": "Sınırsız Aylık Tarama",
+        "p2-f3": "Özel QR Kod Rengi & Logo Yerleştirme",
+        "p2-f4": "Zaman ayarlı akıllı yönlendirmeler",
+        "p2-f5": "Google Analytics & Facebook Pixel yeniden hedefleme",
+        "p2-f6": "vCard Plus dijital kartvizit profilleri",
+        "p2-f7": "Şifre koruması ve geçiş paneli kilidi",
+        "p2-f8": "Geçerlilik kuralları ve alternatif yönlendirmeler",
+        "btn-subscribe": "Hemen Abone Ol",
+        "p3-name": "Ajans Paketi",
+        "p3-desc": "Ajanslar ve yazılımcılar için",
+        "p3-f1": "Pro paketteki her şey dahil",
+        "p3-f2": "Toplu QR oluşturucu (CSV)",
+        "p3-f3": "Özel alan adı yönlendirmesi (white-label)",
+        "p3-f4": "Cihaz işletim sistemine göre yönlendirme (iOS/Android)",
+        "p3-f5": "Öncelikli teknik destek",
+        "faq-title": "Sıkça Sorulan Sorular",
+        "q1": "Ücretsiz pakette aylık 100 tarama limitine ulaşırsam ne olur?",
+        "a1": "Baskı kodlarınız 100 taramayı aşarsa, taratan müşterilerinize geçici olarak limit uyarısı gösterilir. Aylık 500 TL'ye Pro plana geçerek yönlendirmeleri anında tekrar sınırsız hale getirebilirsiniz.",
+        "q2": "QR kodun renklerini ve ortasındaki logoyu değiştirebilir miyim?",
+        "a2": "Evet! Pro plan ile QR kodunuzun ana rengini değiştirebilir ve tam ortasına firmanızın logosunu yerleştirebilirsiniz.",
+        "q3": "Kendi özel alan adımı (domain) yönlendirmede kullanabilir miyim?",
+        "a3": "Evet. Varsayılan kısa linklerimiz qraurify.com/r/ ile başlasa da, Agency plan aboneleri kendi markalarına özel alan adlarını entegre edebilirler.",
+        "footer": "© 2026 QRAurify Inc. Dinamik QR kod yönlendirme yönetimi. Tüm hakları saklıdır.",
+        "m-login-title": "Tekrar Hoş Geldiniz",
+        "m-login-desc": "Aktif QR kod bağlantılarınızı düzenlemek için giriş yapın",
+        "label-email": "E-posta Adresi",
+        "label-pass": "Şifre",
+        "btn-login": "Giriş Yap",
+        "m-reg-title": "Hesap Oluştur",
+        "m-reg-desc": "Baskıyı bir kez yapın, hedef bağlantıyı dilediğiniz an güncelleyin",
+        "btn-create-acc": "Hesap Oluştur",
+        "label-pass-confirm": "Şifreyi Onayla"
+      }
+    };
+
+    let currentLang = 'tr';
+
+    // Check auth status
+    document.addEventListener('DOMContentLoaded', () => {
+      const savedLang = localStorage.getItem('qr_lang') || 'tr';
+      currentLang = savedLang;
+
+      const merchant = JSON.parse(localStorage.getItem('qr_merchant'));
+      if (merchant) {
+        document.getElementById('nav-auth-btn').innerHTML = `
+          <a href="/dashboard.html" class="btn btn-primary" data-i18n="btn-go-dash">Go to Dashboard</a>
+        `;
+        translations.tr["btn-go-dash"] = "Panele Git";
+        translations.en["btn-go-dash"] = "Go to Dashboard";
+      }
+      
+      applyLanguage(currentLang);
+      updateLanguageSelectorUI(currentLang);
+    });
+
+    function setLanguage(lang) {
+      currentLang = lang;
+      localStorage.setItem('qr_lang', lang);
+      applyLanguage(lang);
+      updateLanguageSelectorUI(lang);
+    }
+
+    function updateLanguageSelectorUI(lang) {
+      document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
+      const activeBtn = document.getElementById('lang-btn-' + lang);
+      if (activeBtn) activeBtn.classList.add('active');
+    }
+
+    function applyLanguage(lang) {
+      // Translate static blocks with data-i18n attributes
+      const elements = document.querySelectorAll('[data-i18n]');
+      elements.forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (translations[lang] && translations[lang][key]) {
+          el.innerHTML = translations[lang][key];
+        }
+      });
+
+      // Special handling for dynamic hero title (containing gradient spans)
+      const heroTitle = document.getElementById('hero-title');
+      if (heroTitle) {
+        if (lang === 'tr') {
+          heroTitle.innerHTML = `Yönlendirme Linkini Değiştirin<br><span style="background: var(--accent-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Basılı QR Kodu Aynen Kalsın</span>`;
+        } else {
+          heroTitle.innerHTML = `Change the Redirect Link<br><span style="background: var(--accent-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Keep the Printed QR Code</span>`;
+        }
+      }
+
+      // Switch modals redirect switch texts
+      const loginSwitch = document.getElementById('login-switch-text');
+      if (loginSwitch) {
+        loginSwitch.innerHTML = lang === 'tr' ? 
+          `Yeni kullanıcı mı? <a href="#" onclick="switchModal('login-modal', 'register-modal')" style="color: var(--accent-primary); font-weight: 600;">Hesap oluştur</a>` :
+          `New merchant? <a href="#" onclick="switchModal('login-modal', 'register-modal')" style="color: var(--accent-primary); font-weight: 600;">Create account</a>`;
+      }
+
+      const regSwitch = document.getElementById('reg-switch-text');
+      if (regSwitch) {
+        regSwitch.innerHTML = lang === 'tr' ?
+          `Zaten üye misiniz? <a href="#" onclick="switchModal('register-modal', 'login-modal')" style="color: var(--accent-primary); font-weight: 600;">Giriş yap</a>` :
+          `Already registered? <a href="#" onclick="switchModal('register-modal', 'login-modal')" style="color: var(--accent-primary); font-weight: 600;">Log in</a>`;
+      }
+
+      // Regenerate playground QR with correct language tip text
+      regeneratePlaygroundQr();
+    }
+
+    // Re-render playground QR code canvas on inputs change
+    function regeneratePlaygroundQr() {
+      const text = document.getElementById('play-url').value || 'https://google.com';
+      const color = document.getElementById('play-color').value || '#8b5cf6';
+      document.getElementById('play-color-text').innerText = color.toUpperCase();
+      
+      const container = document.getElementById('play-qr-box');
+      if (!container) return;
+      container.innerHTML = ''; // clear
+
+      // qrcodejs dynamic binding
+      playgroundQr = new QRCode(container, {
+        text: text,
+        width: 180,
+        height: 180,
+        colorDark: color,
+        colorLight: '#ffffff',
+        correctLevel: QRCode.CorrectLevel.H
+      });
+    }
+
+    // Download dynamic canvas element as image
+    function downloadPlaygroundQr() {
+      const img = document.querySelector('#play-qr-box img');
+      if (!img) return;
+
+      const link = document.createElement('a');
+      link.download = 'playground_qr.png';
+      link.href = img.src;
+      link.click();
+    }
+
+    // Modals controllers
+    function openModal(id) {
+      document.getElementById(id).classList.add('active');
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.remove('active');
+    }
+
+    function switchModal(closeId, openId) {
+      closeModal(closeId);
+      setTimeout(() => openModal(openId), 300);
+    }
+
+    function toggleFaq(element) {
+      element.classList.toggle('active');
+    }
+
+    // Handle authentication API submits
+    async function handleAuth(event, endpoint, errorId) {
+      event.preventDefault();
+      
+      const errorDiv = document.getElementById(errorId);
+      errorDiv.style.display = 'none';
+
+      const prefix = endpoint.includes('register') ? 'register' : 'login';
+      const email = document.getElementById(prefix + '-email').value;
+      const password = document.getElementById(prefix + '-pass').value;
+
+      // Password confirmation check (register only)
+      if (prefix === 'register') {
+        const confirmInput = document.getElementById('register-pass-confirm');
+        const passErrEl = document.getElementById('register-pass-error');
+        if (passErrEl) passErrEl.style.display = 'none';
+
+        if (password.length < 6) {
+          if (passErrEl) {
+            passErrEl.innerText = currentLang === 'tr' ? 'Şifre en az 6 karakter olmalıdır.' : 'Password must be at least 6 characters.';
+            passErrEl.style.display = 'block';
+          }
+          return;
+        }
+
+        if (confirmInput && confirmInput.value !== password) {
+          if (passErrEl) {
+            passErrEl.innerText = currentLang === 'tr' ? 'Şifreler eşleşmiyor.' : 'Passwords do not match.';
+            passErrEl.style.display = 'block';
+          }
+          return;
+        }
+      }
+
+      try {
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ email, password })
+        });
+
+        const data = await response.json();
+        
+        if (!response.ok) {
+          throw new Error(data.error || 'Authentication failed');
+        }
+
+        // Store active session details
+        localStorage.setItem('qr_merchant', JSON.stringify(data));
+        window.location.href = '/dashboard.html';
+      } catch (err) {
+        errorDiv.innerText = err.message;
+        errorDiv.style.display = 'block';
+      }
+    }
+
+    // Close modals on clicking outside modal content
+    document.querySelectorAll('.modal-overlay').forEach(overlay => {
+      overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+          closeModal(overlay.id);
+        }
+      });
+    });
+  </script>
+</body>
+</html>
