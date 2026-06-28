@@ -1182,8 +1182,7 @@ async function handleCreateQr(event) {
     await showAlert(dict["alert-qr-created"]);
     fetchQrsList();
   } catch (err) {
-    errDiv.innerText = err.message;
-    errDiv.style.display = 'block';
+    await showAlert(err.message);
   }
 }
 
@@ -1222,8 +1221,7 @@ async function handleBulkCreate(event) {
     }
     fetchQrsList();
   } catch (err) {
-    errDiv.innerText = err.message;
-    errDiv.style.display = 'block';
+    await showAlert(err.message);
   }
 }
 
@@ -1517,8 +1515,7 @@ async function handleSaveEdit(event) {
     closeEditModal();
     fetchQrsList();
   } catch (err) {
-    errDiv.innerText = err.message;
-    errDiv.style.display = 'block';
+    await showAlert(err.message);
   }
 }
 
