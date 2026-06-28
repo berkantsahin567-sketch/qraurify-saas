@@ -288,10 +288,11 @@ const translations = {
 };
 
 // ─── Initialization ───────────────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   const savedLang = localStorage.getItem('qr_lang') || 'tr';
   currentLang = savedLang;
   updateLanguageSelectorUI(currentLang);
+  applyLanguage(currentLang);
 
   const localData = localStorage.getItem('qr_merchant');
   if (!localData) {
@@ -1055,9 +1056,10 @@ function toggleTimeInputs() {
 
 async function copyShortLink(link) {
   const dict = translations[currentLang];
-  navigator.clipboard.writeText(link).then(() => {
+  try {
+    await navigator.clipboard.writeText(link);
     await showAlert(dict["alert-link-copied"]);
-  }).catch(() => {
+  } catch (err) {
     // Fallback for older browsers
     const el = document.createElement('textarea');
     el.value = link;
@@ -1066,7 +1068,7 @@ async function copyShortLink(link) {
     document.execCommand('copy');
     document.body.removeChild(el);
     await showAlert(dict["alert-link-copied"]);
-  });
+  }
 }
 
 // ─── QR Create / Bulk Create ──────────────────────────────────────────────────
@@ -1723,7 +1725,7 @@ function downloadQrSvg(qrId) {
 }
 
 // ─── Delete QR ────────────────────────────────────────────────────────────────
-async async function deleteQr(qrId) {
+async function deleteQr(qrId) {
   const qr = activeQrList.find(q => q.id === qrId);
   if (!qr) return;
 
@@ -1798,7 +1800,7 @@ function updateCheckoutPrice() {
 }
 
 // ─── Automated Webhook Payment Check ─────────────────────────────────────────
-async async function checkPaymentStatus() {
+async function checkPaymentStatus() {
   const submitBtn = document.getElementById('checkout-submit-btn');
   if (submitBtn) {
     submitBtn.setAttribute('disabled', 'true');

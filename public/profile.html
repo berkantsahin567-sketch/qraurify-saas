@@ -276,6 +276,7 @@
       const savedLang = localStorage.getItem('qr_lang') || 'tr';
       currentLang = savedLang;
       updateLanguageSelectorUI(currentLang);
+      applyLanguage(currentLang);
 
       const localData = localStorage.getItem('qr_merchant');
       if (!localData) {
