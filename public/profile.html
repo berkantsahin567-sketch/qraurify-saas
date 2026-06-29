@@ -160,14 +160,7 @@
         <div class="glass-panel" style="padding: 2rem;">
           <h4 style="font-size: 1rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border-color);" data-i18n="profile-plan-title">Plan & Subscription</h4>
           
-          <div id="plan-free-info" style="display: none;">
-            <p style="color: var(--text-secondary); margin-bottom: 1.25rem;" data-i18n="profile-free-plan-desc">You are currently on the <strong>Free Plan</strong> — 1 QR code and 100 scans per month.</p>
-            <a href="/dashboard.html" onclick="setTimeout(()=>openUpgradeModal?.(),200)" class="btn btn-primary" style="padding: 0.5rem 1.5rem; font-size: 0.85rem;" data-i18n="profile-btn-upgrade">Upgrade to Pro →</a>
-          </div>
-          <div id="plan-paid-info" style="display: none;">
-            <p style="color: var(--text-secondary); margin-bottom: 1.25rem;" data-i18n="profile-paid-plan-desc">You're on a <strong id="plan-paid-name" style="color: var(--accent-primary);">Pro Plan</strong> with unlimited QR codes and scans.</p>
-            <a href="/dashboard.html" class="btn btn-secondary" style="padding: 0.5rem 1.5rem; font-size: 0.85rem;" data-i18n="profile-btn-back-dash">Back to Dashboard</a>
-          </div>
+          <div id="plan-info-container"></div>
         </div>
 
         <!-- Danger Zone Card -->
@@ -409,15 +402,54 @@
       document.getElementById('detail-joined').innerText = joinDate;
 
       // Plan card
-      const isPaid = merchant.plan === 'pro' || merchant.plan === 'agency';
-      document.getElementById('plan-free-info').style.display = isPaid ? 'none' : 'block';
-      document.getElementById('plan-paid-info').style.display = isPaid ? 'block' : 'none';
-      if (isPaid) {
-        const planName = merchant.plan === 'agency' 
-          ? (currentLang === 'tr' ? 'Ajans Planı' : 'Agency Plan') 
-          : (currentLang === 'tr' ? 'Pro Planı' : 'Pro Plan');
-        document.getElementById('plan-paid-name').innerText = planName;
+      const isTR = currentLang === 'tr';
+      const infoContainer = document.getElementById('plan-info-container');
+      
+      let html = '';
+      if (merchant.plan === 'agency') {
+        html = `
+          <p style="color: var(--text-secondary); margin-bottom: 1.25rem;">
+            ${isTR ? 'Şu anda sınırsız QR kod ve yönlendirme içeren <strong>Ajans Planı</strong> kullanıyorsunuz.' : 'You are currently on the <strong>Agency Plan</strong> with unlimited QR codes and scans.'}
+          </p>
+          <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: center; margin-top: 1rem;">
+            <button onclick="changePlan('pro')" class="btn btn-secondary" style="padding: 0.5rem 1.5rem; font-size: 0.85rem;">
+              ${isTR ? 'Pro Plana Düşür (500 TL/ay)' : 'Downgrade to Pro (500 TL/mo)'}
+            </button>
+            <button onclick="changePlan('free')" class="btn btn-danger" style="padding: 0.5rem 1.5rem; font-size: 0.85rem;">
+              ${isTR ? 'Aboneliği İptal Et (Ücretsiz Plana Geç)' : 'Cancel Subscription (Downgrade to Free)'}
+            </button>
+          </div>
+        `;
+      } else if (merchant.plan === 'pro') {
+        html = `
+          <p style="color: var(--text-secondary); margin-bottom: 1.25rem;">
+            ${isTR ? 'Şu anda sınırsız QR kod ve yönlendirme içeren <strong>Pro Planı</strong> kullanıyorsunuz.' : 'You are currently on the <strong>Pro Plan</strong> with unlimited QR codes and scans.'}
+          </p>
+          <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: center; margin-top: 1rem;">
+            <button onclick="changePlan('agency')" class="btn btn-primary" style="padding: 0.5rem 1.5rem; font-size: 0.85rem; background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%); border: none;">
+              ${isTR ? 'Ajans Plana Yükselt (1000 TL/ay)' : 'Upgrade to Agency (1000 TL/mo)'}
+            </button>
+            <button onclick="changePlan('free')" class="btn btn-danger" style="padding: 0.5rem 1.5rem; font-size: 0.85rem;">
+              ${isTR ? 'Aboneliği İptal Et (Ücretsiz Plana Geç)' : 'Cancel Subscription (Downgrade to Free)'}
+            </button>
+          </div>
+        `;
+      } else {
+        html = `
+          <p style="color: var(--text-secondary); margin-bottom: 1.25rem;">
+            ${isTR ? 'Şu anda <strong>Ücretsiz Plan</strong> kullanıyorsunuz — aylık 1 dinamik QR kod ve 100 yönlendirme limitiniz var.' : 'You are currently on the <strong>Free Plan</strong> — 1 QR code and 100 scans per month.'}
+          </p>
+          <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: center; margin-top: 1rem;">
+            <a href="/dashboard.html?upgrade=true" class="btn btn-primary" style="padding: 0.5rem 1.5rem; font-size: 0.85rem; text-decoration: none; display: inline-flex; align-items: center;">
+              ${isTR ? 'Pro Plana Yükselt (500 TL/ay) →' : 'Upgrade to Pro (500 TL/mo) →'}
+            </a>
+            <button onclick="changePlan('agency')" class="btn btn-secondary" style="padding: 0.5rem 1.5rem; font-size: 0.85rem; border-color: var(--accent-secondary); color: var(--accent-secondary);">
+              ${isTR ? 'Ajans Plana Yükselt (1000 TL/ay)' : 'Upgrade to Agency (1000 TL/mo)'}
+            </button>
+          </div>
+        `;
       }
+      infoContainer.innerHTML = html;
 
       // Dynamic placeholder updates
       document.getElementById('edit-display-name').placeholder = currentLang === 'tr' ? 'Adınız veya işletme adınız' : 'Your name or business name';
@@ -638,6 +670,51 @@
         cancelBtn.addEventListener('click', onCancel);
       });
     }
+
+    async function changePlan(targetPlan) {
+      const isTR = currentLang === 'tr';
+      let confirmMsg = '';
+      if (targetPlan === 'free') {
+        confirmMsg = isTR 
+          ? 'Aboneliğinizi iptal etmek istediğinize emin misiniz? Hesabınız ücretsiz plana düşürülecektir.' 
+          : 'Are you sure you want to cancel your subscription? Your account will be downgraded to the free plan.';
+      } else if (targetPlan === 'pro') {
+        confirmMsg = isTR 
+          ? 'Planınızı Pro Plan\'a değiştirmek istediğinize emin misiniz? Aylık 500 TL olarak faturalandırılacaktır.' 
+          : 'Are you sure you want to change your plan to Pro Plan? You will be charged 500 TL/month.';
+      } else if (targetPlan === 'agency') {
+        confirmMsg = isTR 
+          ? 'Planınızı Ajans Planı\'na değiştirmek istediğinize emin misiniz? Aylık 1000 TL olarak faturalandırılacaktır.' 
+          : 'Are you sure you want to change your plan to Agency Plan? You will be charged 1000 TL/month.';
+      }
+      
+      if (!await showConfirm(confirmMsg)) return;
+
+      try {
+        const res = await fetch(`/api/merchants/${currentMerchant.id}/upgrade`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ plan: targetPlan })
+        });
+
+        if (!res.ok) {
+          const errData = await res.json();
+          throw new Error(errData.error || 'Failed to update plan.');
+        }
+
+        const updatedMerchant = await res.json();
+        currentMerchant = updatedMerchant;
+        localStorage.setItem('qr_merchant', JSON.stringify(updatedMerchant));
+        
+        renderProfile(updatedMerchant);
+        
+        await showAlert(isTR ? '✓ Abonelik planınız başarıyla güncellendi!' : '✓ Subscription plan updated successfully!');
+      } catch (err) {
+        await showAlert((isTR ? 'Hata oluştu: ' : 'Error updating plan: ') + err.message);
+      }
+    }
+
+    window.changePlan = changePlan;
 
   </script>
 

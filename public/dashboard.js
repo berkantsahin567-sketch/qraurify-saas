@@ -359,6 +359,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   } else if (urlParams.get('payment') === 'error') {
     window.history.replaceState({}, document.title, window.location.pathname);
     await showAlert(currentLang === 'tr' ? 'Ödeme işlemi başarısız oldu veya iptal edildi.' : 'Payment failed or was cancelled.');
+  } else if (urlParams.get('upgrade') === 'true') {
+    window.history.replaceState({}, document.title, window.location.pathname);
+    const billingNavEl = document.getElementById('nav-item-billing');
+    if (billingNavEl && typeof switchTab === 'function') {
+      switchTab('billing', billingNavEl);
+    }
+    if (typeof openUpgradeModal === 'function') {
+      openUpgradeModal();
+    }
   }
 
   // Wire avatar dropdown toggle

@@ -299,21 +299,23 @@ app.delete('/api/merchants/:id', async (req, res) => {
 // Upgrade plan
 app.post('/api/merchants/:id/upgrade', async (req, res) => {
   const { plan } = req.body;
-  const targetPlan = ['pro', 'agency'].includes(plan) ? plan : 'pro';
+  const targetPlan = ['free', 'pro', 'agency'].includes(plan) ? plan : 'pro';
   const merchant = await db.getMerchant(req.params.id);
   if (!merchant) {
     return res.status(404).json({ error: 'Merchant not found.' });
   }
 
-  // Calculate subscription expiration (1 month from now)
+  const isFree = targetPlan === 'free';
   const expire = new Date();
-  expire.setMonth(expire.getMonth() + 1);
+  if (!isFree) {
+    expire.setMonth(expire.getMonth() + 1);
+  }
 
   const updated = await db.saveMerchant(merchant.id, {
     plan: targetPlan,
     subscriptionStatus: 'active',
-    subscriptionExpireDate: expire.toISOString(),
-    lastPaymentDate: new Date().toISOString()
+    subscriptionExpireDate: isFree ? null : expire.toISOString(),
+    lastPaymentDate: isFree ? null : new Date().toISOString()
   });
   const { password: _, ...safeMerchant } = updated;
   res.json(safeMerchant);
@@ -435,7 +437,7 @@ app.post('/api/upload', async (req, res) => {
   }
 
   try {
-    const base64Data = fileData.replace(/^data:image\/\w+;base64,/, "");
+    const base64Data = fileData.includes(';base64,') ? fileData.split(';base64,')[1] : fileData;
     const buffer = Buffer.from(base64Data, 'base64');
     
     const uploadsDir = path.join(__dirname, 'public', 'uploads');
