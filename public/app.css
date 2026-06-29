@@ -1174,3 +1174,74 @@ footer {
 @keyframes scaleUpModal {
   to { transform: scale(1); }
 }
+
+/* Mobile Adaptations and Overflow Prevention */
+@media (max-width: 768px) {
+  html, body {
+    max-width: 100vw;
+    overflow-x: hidden;
+  }
+  
+  /* Prevent horizontal navigation overflow */
+  header .nav-container {
+    padding: 0 1rem;
+  }
+  header .nav-links {
+    display: none !important;
+  }
+  header .btn-secondary {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8rem;
+  }
+  
+  /* Stacking hero buttons vertically if small */
+  .hero-actions {
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .hero-actions .btn {
+    width: 100%;
+    max-width: 280px;
+  }
+  
+  /* Responsive modals */
+  .modal-content {
+    padding: 2rem 1.5rem !important;
+    max-width: 90% !important;
+    margin: 0 auto;
+  }
+  
+  /* Sidebar wrapping to prevent horizontal overflow */
+  .sidebar-nav {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem;
+    flex-direction: row !important;
+  }
+  .sidebar-item {
+    margin-bottom: 0 !important;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Dynamic header stacking */
+  header .nav-container {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: center;
+  }
+  
+  /* Adjust containers padding */
+  .container {
+    padding: 0 1rem;
+  }
+  
+  /* Smaller responsive typography for mobile headers */
+  .hero h1 {
+    font-size: 1.8rem !important;
+  }
+  .section-header h2 {
+    font-size: 1.8rem !important;
+  }
+}

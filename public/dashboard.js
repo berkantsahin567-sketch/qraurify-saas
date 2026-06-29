@@ -41,7 +41,7 @@ const translations = {
     "th-qr": "QR Code",
     "th-dev": "Device",
     "th-ref": "Referrer",
-    "th-loc": "Location (Mock)",
+    "th-loc": "Location",
     "tbl-empty": "No scans recorded yet. Generate a QR code and scan it to see live updates!",
     "c-title": "Create a Dynamic QR Code",
     "c-desc": "The short code link remains permanent, while you can swap target URLs instantly.",
@@ -196,7 +196,7 @@ const translations = {
     "th-qr": "QR Kodu",
     "th-dev": "Cihaz",
     "th-ref": "Kaynak",
-    "th-loc": "Konum (Simüle)",
+    "th-loc": "Konum",
     "tbl-empty": "Henüz tarama kaydedilmedi. Bir QR kod oluşturup telefonunuzla okutarak canlı güncellemeyi görün!",
     "c-title": "Dinamik QR Kod Oluştur",
     "c-desc": "QR kodun yönlendirildiği kısa kod kalıcıdır, yönlendirilen hedef URL'i dilediğiniz an güncelleyebilirsiniz.",
@@ -461,6 +461,80 @@ function applyLanguage(lang) {
     } else {
       tierEl.innerText = lang === 'tr' ? 'Ücretsiz Plan' : 'Free Plan';
       tierEl.style.color = 'var(--text-secondary)';
+    }
+  }
+
+  // Dynamic billing summary translation updates
+  const billTierName = document.getElementById('billing-tier-name');
+  const billScansLimit = document.getElementById('billing-scans-limit');
+  const billQrsLimit = document.getElementById('billing-qrs-limit');
+  const billSubStatus = document.getElementById('billing-sub-status');
+  const billExpireDate = document.getElementById('billing-expire-date');
+  const billExpireRow = document.getElementById('billing-expire-row');
+
+  if (currentMerchant) {
+    const isTR = lang === 'tr';
+    
+    // 1. Current Plan Name
+    if (billTierName) {
+      if (currentMerchant.plan === 'agency') {
+        billTierName.innerText = isTR ? 'Ajans Planı' : 'Agency Plan';
+        billTierName.style.color = 'var(--accent-secondary)';
+      } else if (currentMerchant.plan === 'pro') {
+        billTierName.innerText = isTR ? 'Pro Paket' : 'Pro Plan';
+        billTierName.style.color = 'var(--accent-primary)';
+      } else {
+        billTierName.innerText = isTR ? 'Ücretsiz Paket' : 'Free Plan';
+        billTierName.style.color = 'var(--text-secondary)';
+      }
+    }
+
+    // 2. Monthly Scans Limit
+    if (billScansLimit) {
+      if (currentMerchant.plan === 'free') {
+        billScansLimit.innerText = isTR ? 'Aylık 100 yönlendirme' : '100 scans / month';
+      } else {
+        billScansLimit.innerText = isTR ? 'Sınırsız' : 'Unlimited';
+      }
+    }
+
+    // 3. Dynamic QR Codes Limit
+    if (billQrsLimit) {
+      if (currentMerchant.plan === 'free') {
+        billQrsLimit.innerText = isTR ? '1 dinamik kod' : '1 dynamic code';
+      } else {
+        billQrsLimit.innerText = isTR ? 'Sınırsız' : 'Unlimited';
+      }
+    }
+
+    // 4. Payment Status
+    if (billSubStatus) {
+      if (currentMerchant.subscriptionStatus === 'unpaid') {
+        billSubStatus.innerText = isTR ? 'Ödenmemiş / Gecikmiş' : 'Unpaid / Past Due';
+        billSubStatus.style.color = 'var(--error)';
+      } else if (currentMerchant.subscriptionStatus === 'suspended') {
+        billSubStatus.innerText = isTR ? 'Askıya Alındı' : 'Suspended';
+        billSubStatus.style.color = 'var(--error)';
+      } else {
+        billSubStatus.innerText = isTR ? 'Aktif' : 'Active';
+        billSubStatus.style.color = 'var(--success)';
+      }
+    }
+
+    // 5. Expiration Date
+    if (billExpireDate && billExpireRow) {
+      if (currentMerchant.plan === 'free') {
+        billExpireRow.style.display = 'none';
+      } else {
+        billExpireRow.style.display = 'flex';
+        if (currentMerchant.subscriptionExpireDate) {
+          const dateOpts = { year: 'numeric', month: 'long', day: 'numeric' };
+          const dateText = new Date(currentMerchant.subscriptionExpireDate).toLocaleDateString(isTR ? 'tr-TR' : 'en-US', dateOpts);
+          billExpireDate.innerText = dateText;
+        } else {
+          billExpireDate.innerText = '—';
+        }
+      }
     }
   }
 

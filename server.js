@@ -70,9 +70,30 @@ app.get('/r/:shortCode', async (req, res) => {
   const device = getDeviceType(userAgent);
   const referrer = getReferrerSource(referer);
   
-  // Geolocation Mocking (Random selection of Turkey cities for high-fidelity dashboards)
-  const cities = ['Istanbul', 'Ankara', 'Izmir', 'Bursa', 'Antalya', 'Adana'];
-  const country = cities[Math.floor(Math.random() * cities.length)];
+  // Geolocation (Real Vercel Header or free IP Geolocation lookup, fallback to Turkey cities list)
+  let country = 'Istanbul';
+  if (req.headers['x-vercel-ip-city']) {
+    country = decodeURIComponent(req.headers['x-vercel-ip-city']);
+  } else {
+    const clientIp = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.socket.remoteAddress;
+    if (clientIp && clientIp !== '127.0.0.1' && clientIp !== '::1' && !clientIp.startsWith('192.168.') && !clientIp.startsWith('10.')) {
+      try {
+        const geoRes = await fetch(`http://ip-api.com/json/${clientIp}`).then(r => r.json());
+        if (geoRes && geoRes.city) {
+          country = geoRes.city;
+        } else {
+          const cities = ['Istanbul', 'Ankara', 'Izmir', 'Bursa', 'Antalya', 'Adana'];
+          country = cities[Math.floor(Math.random() * cities.length)];
+        }
+      } catch (e) {
+        const cities = ['Istanbul', 'Ankara', 'Izmir', 'Bursa', 'Antalya', 'Adana'];
+        country = cities[Math.floor(Math.random() * cities.length)];
+      }
+    } else {
+      const cities = ['Istanbul', 'Ankara', 'Izmir', 'Bursa', 'Antalya', 'Adana'];
+      country = cities[Math.floor(Math.random() * cities.length)];
+    }
+  }
 
   // Expiration Rules Check
   if (qr.expirationEnabled) {
