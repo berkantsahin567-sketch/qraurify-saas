@@ -132,6 +132,29 @@ const db = {
   },
 
   async deleteMerchant(id) {
+    // 1. Get all QR codes for this merchant
+    const { data: qrs } = await supabase
+      .from('qrcodes')
+      .select('id')
+      .eq('merchantid', id);
+      
+    if (qrs && qrs.length > 0) {
+      const qrIds = qrs.map(q => q.id);
+      
+      // 2. Delete all scans referencing these QR codes
+      await supabase
+        .from('scans')
+        .delete()
+        .in('qrcodeid', qrIds);
+        
+      // 3. Delete all QR codes referencing the merchant
+      await supabase
+        .from('qrcodes')
+        .delete()
+        .in('id', qrIds);
+    }
+
+    // 4. Delete the merchant
     const { error } = await supabase
       .from('merchants')
       .delete()
@@ -268,6 +291,13 @@ const db = {
   },
 
   async deleteQr(id) {
+    // 1. Delete associated scans first to prevent foreign key constraint issues
+    await supabase
+      .from('scans')
+      .delete()
+      .eq('qrcodeid', id);
+
+    // 2. Delete the QR code
     const { error } = await supabase
       .from('qrcodes')
       .delete()

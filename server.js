@@ -871,6 +871,7 @@ app.put('/api/admin/merchants/:id', requireAdminAuth, async (req, res) => {
     updateData.plan = ['free', 'pro', 'agency'].includes(plan) ? plan : 'free';
     if (updateData.plan === 'free') {
       updateData.subscriptionExpireDate = null;
+      updateData.lastPaymentDate = null;
     } else if (merchant.plan === 'free') {
       // Free -> Paid transition: auto set expire date to 1 month from now
       const expire = new Date();
