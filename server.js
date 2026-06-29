@@ -461,19 +461,74 @@ app.post('/api/upload', async (req, res) => {
     const base64Data = fileData.includes(';base64,') ? fileData.split(';base64,')[1] : fileData;
     const buffer = Buffer.from(base64Data, 'base64');
     
-    const uploadsDir = path.join(__dirname, 'public', 'uploads');
-    const fs = require('fs');
-    if (!fs.existsSync(uploadsDir)) {
-      fs.mkdirSync(uploadsDir, { recursive: true });
+    // Extract mime type if available
+    let mimeType = 'image/png';
+    const mimeMatch = fileData.match(/^data:([^;]+);/);
+    if (mimeMatch) {
+      mimeType = mimeMatch[1];
     }
-
+    
     const fileExt = path.extname(fileName) || '.png';
     const safeName = 'logo_' + Math.random().toString(36).substring(2, 11) + fileExt;
-    const savePath = path.join(uploadsDir, safeName);
     
-    fs.writeFileSync(savePath, buffer);
-    
-    res.json({ url: `/uploads/${safeName}` });
+    // Try to upload to Supabase Storage first (for Serverless support)
+    try {
+      const supabase = db.supabase;
+      if (supabase) {
+        // Ensure bucket exists
+        try {
+          const { data: buckets } = await supabase.storage.listBuckets();
+          if (buckets) {
+            const hasLogos = buckets.some(b => b.name === 'logos');
+            if (!hasLogos) {
+              await supabase.storage.createBucket('logos', { public: true });
+            }
+          }
+        } catch (e) {
+          console.warn('Storage bucket check failed, trying to upload anyway:', e.message);
+        }
+
+        // Upload to bucket
+        const { data, error } = await supabase.storage
+          .from('logos')
+          .upload(safeName, buffer, {
+            contentType: mimeType,
+            upsert: true
+          });
+
+        if (error) throw error;
+
+        // Get public URL
+        const { data: publicUrlData } = supabase.storage
+          .from('logos')
+          .getPublicUrl(safeName);
+
+        if (publicUrlData && publicUrlData.publicUrl) {
+          return res.json({ url: publicUrlData.publicUrl });
+        }
+      }
+    } catch (storageErr) {
+      console.warn('Supabase storage upload failed, falling back to local storage:', storageErr.message);
+    }
+
+    // Fallback 1: Write locally (great for local environments)
+    try {
+      const uploadsDir = path.join(__dirname, 'public', 'uploads');
+      const fs = require('fs');
+      if (!fs.existsSync(uploadsDir)) {
+        fs.mkdirSync(uploadsDir, { recursive: true });
+      }
+
+      const savePath = path.join(uploadsDir, safeName);
+      fs.writeFileSync(savePath, buffer);
+      
+      return res.json({ url: `/uploads/${safeName}` });
+    } catch (localWriteErr) {
+      console.warn('Local filesystem write failed, falling back to direct base64 data URL:', localWriteErr.message);
+    }
+
+    // Fallback 2: Return base64 URL directly so application never fails on upload
+    res.json({ url: fileData });
   } catch (err) {
     res.status(500).json({ error: 'Failed to save logo file: ' + err.message });
   }

@@ -1443,8 +1443,12 @@ function openEditModal(qrId) {
     if (logoEl) logoEl.value = qr.logoUrl || '';
     if (logoPreviewEl) {
       if (qr.logoUrl) {
-        const parts = qr.logoUrl.split('/');
-        logoPreviewEl.innerText = parts[parts.length - 1];
+        if (qr.logoUrl.startsWith('data:')) {
+          logoPreviewEl.innerText = currentLang === 'tr' ? 'Yüklenen Görsel' : 'Uploaded Image';
+        } else {
+          const parts = qr.logoUrl.split('/');
+          logoPreviewEl.innerText = parts[parts.length - 1];
+        }
       } else {
         logoPreviewEl.innerText = currentLang === 'tr' ? 'Dosya seçilmedi' : 'No file selected';
       }

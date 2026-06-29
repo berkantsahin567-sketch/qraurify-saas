@@ -324,4 +324,5 @@ const db = {
   }
 };
 
+db.supabase = supabase;
 module.exports = db;
